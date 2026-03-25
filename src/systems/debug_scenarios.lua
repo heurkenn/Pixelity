@@ -2,8 +2,9 @@
 -- Seeds representative game states so UI and game flow can be tested quickly.
 
 local debug_scenarios = {}
-local law = require("src.law")
-local object = require("src.object")
+local boss = require("src.data.boss")
+local law = require("src.data.law")
+local object = require("src.data.object")
 
 local function seedDebugBoard(grid)
     grid.setCell(1, 1, 1)
@@ -36,6 +37,15 @@ function debug_scenarios.start(game, player, grid, startGame, scenarioId)
     game.message = "Mode debug."
     player.money = 12
 
+    local function openBossIntro(bossId)
+        local bosses = require("src.systems.bosses")
+        seedDebugBoard(grid)
+        local bossData = boss.getData(bossId)
+        game.current_boss = bossData
+        player.current_boss = bossData
+        bosses.prepareBossIntro(game, bossData)
+    end
+
     if scenarioId == "play" then
         seedDebugBoard(grid)
         seedPlayerCollections(player)
@@ -64,6 +74,53 @@ function debug_scenarios.start(game, player, grid, startGame, scenarioId)
         return
     end
 
+    if scenarioId == "boss_intro" then
+        openBossIntro("earthquake")
+        return
+    end
+
+    if scenarioId == "boss_earthquake" then
+        seedDebugBoard(grid)
+        local bossData = boss.getData("earthquake")
+        game.current_boss = bossData
+        player.current_boss = bossData
+        return
+    end
+
+    if scenarioId == "boss_tsunami" then
+        seedDebugBoard(grid)
+        local bossData = boss.getData("tsunami")
+        game.current_boss = bossData
+        player.current_boss = bossData
+        return
+    end
+
+    if scenarioId == "boss_lactose" then
+        seedDebugBoard(grid)
+        local bossData = boss.getData("lactose_dog")
+        game.current_boss = bossData
+        player.current_boss = bossData
+        return
+    end
+
+    if scenarioId == "boss_dark" then
+        seedDebugBoard(grid)
+        seedPlayerCollections(player)
+        local bossData = boss.getData("in_the_dark")
+        game.current_boss = bossData
+        player.current_boss = bossData
+        return
+    end
+
+    if scenarioId == "boss_renovation" then
+        local bossData = boss.getData("renovation")
+        game.current_boss = bossData
+        player.current_boss = bossData
+        grid.init(5)
+        grid.generateObstacles(15)
+        return
+    end
+
     seedDebugBoard(grid)
     game.state = "round_clear"
     game.current_resolution_score = 186
@@ -72,14 +129,15 @@ function debug_scenarios.start(game, player, grid, startGame, scenarioId)
     game.round_clear = {
         phase = scenarioId == "summary" and "summary" or "shop",
         banner_timer = 0.9,
-        countdown_delay = 1,
+        countdown_delay = math.max(0.2, 1 / math.max(1, game.scoring_speed or 1)),
         countdown_elapsed = 0,
         score_display = 186,
         global_score_display = player.total_score,
         previous_total_score = player.total_score,
         reward_pieces = 3,
+        reward_bank = 2,
         remaining_hands = 2,
-        total_reward = 5,
+        total_reward = 7,
         summary_lines = {
             "House x2",
             "Park x1",

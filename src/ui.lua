@@ -4,6 +4,8 @@
 local fonts = require("src.helpers.fonts")
 local intro_scene = require("src.scenes.intro")
 local menu_scene = require("src.scenes.menu")
+local stats_scene = require("src.scenes.stats")
+local boss_intro_scene = require("src.scenes.boss_intro")
 local play_scene = require("src.scenes.play")
 local options_scene = require("src.scenes.options")
 local codex_scene = require("src.scenes.codex")
@@ -29,6 +31,14 @@ end
 
 function ui.drawMenu(game)
     menu_scene.draw(game)
+end
+
+function ui.drawBossIntro(game)
+    boss_intro_scene.draw(game)
+end
+
+function ui.drawStatsModal(game, profile)
+    stats_scene.draw(game, profile)
 end
 
 function ui.drawGrid(game, grid, buildings, getPendingPlacementAt)
@@ -63,8 +73,8 @@ function ui.drawConfirmBuild(game)
     confirm_build_scene.draw(game)
 end
 
-function ui.drawSetup(game, getMayorById)
-    setup_scene.draw(game, getMayorById)
+function ui.drawSetup(game, getMayorById, profile)
+    setup_scene.draw(game, getMayorById, profile)
 end
 
 function ui.drawGameOver(game, player)

@@ -1,4 +1,5 @@
--- src/object.lua
+-- src/data/object.lua
+-- Object catalog and consumable gameplay effects.
 
 local object = {}
 

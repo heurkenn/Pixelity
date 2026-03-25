@@ -20,6 +20,11 @@ function menu.draw(game)
     love.graphics.printf("@Heurk3nnn", 0, 188, love.graphics.getWidth(), "center")
 
     cards.drawPrimaryButton(game.menu_buttons.play, "Jouer")
+    if game.menu_play_open then
+        cards.drawSecondaryButtonState(game.menu_buttons.continue, "Continuer", not game.has_save)
+        cards.drawSecondaryButton(game.menu_buttons.new_game, "Nouvelle partie")
+    end
+    cards.drawSecondaryButton(game.menu_buttons.stats, "Stats")
     cards.drawSecondaryButton(game.menu_buttons.options, "Options")
     cards.drawSecondaryButton(game.debug_buttons.open, "Debug")
 

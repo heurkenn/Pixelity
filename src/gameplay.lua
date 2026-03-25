@@ -5,6 +5,8 @@ local round_flow = require("src.systems.round_flow")
 local resolution = require("src.systems.resolution")
 local debug_scenarios = require("src.systems.debug_scenarios")
 local shop_state = require("src.systems.shop_state")
+local bosses = require("src.systems.bosses")
+local buildings = require("src.data.buildings")
 
 local gameplay = {}
 
@@ -26,6 +28,27 @@ function gameplay.canPlaceAt(game, grid, x, y)
         return false
     end
     return gameplay.getPendingPlacementAt(game, x, y) == nil
+end
+
+function gameplay.countPlacedOrCommitted(game, grid, buildingId)
+    local count = 0
+    local cells = grid.getCells()
+
+    for y = 1, grid.getSize() do
+        for x = 1, grid.getSize() do
+            if cells[y][x] == buildingId then
+                count = count + 1
+            end
+        end
+    end
+
+    for _, placement in ipairs(game.pending_placements) do
+        if placement.card.id == buildingId then
+            count = count + 1
+        end
+    end
+
+    return count
 end
 
 function gameplay.updateHandStatusMessage(game, player, prefix)
@@ -73,20 +96,32 @@ function gameplay.updateRoundClear(game, player, dt)
     resolution.updateRoundClear(game, player, dt)
 end
 
+function gameplay.updateBossIntro(game, dt)
+    bosses.updateBossIntro(game, dt)
+end
+
 function gameplay.openRoundSummary(game)
     round_flow.openRoundSummary(game)
 end
 
-function gameplay.openShop(game)
-    round_flow.openShop(game)
+function gameplay.openShop(game, player)
+    round_flow.openShop(game, player)
 end
 
 function gameplay.useExplosive(game, player, grid, x, y)
     return shop_state.useExplosive(game, player, grid, x, y)
 end
 
+function gameplay.applyBossBuildEffects(game, player, grid)
+    return bosses.applyBuildEffects(game, player, grid)
+end
+
 function gameplay.startNextRound(game, player, grid)
     round_flow.startNextRound(game, player, grid)
+end
+
+function gameplay.startBossRound(game, player, grid)
+    round_flow.startBossRound(game, player, grid)
 end
 
 function gameplay.hasCommittedBuildings(grid)
@@ -108,19 +143,44 @@ function gameplay.placeCardFromHand(game, player, grid, handIndex, x, y)
         game.message = "Maximum 4 cartes avant BUILD."
         return false
     end
-    if not gameplay.canPlaceAt(game, grid, x, y) then
-        game.message = "Case indisponible."
-        return false
-    end
 
     local card = player.removeCardFromHand(handIndex)
     if not card then
         return false
     end
 
-    table.insert(game.pending_placements, { x = x, y = y, card = card })
+    -- Immeuble is the only card that can legally target an occupied cell:
+    -- stacking it upgrades the existing Immeuble instead of replacing the tile.
+    local existingId = grid.getCell(x, y)
+    local isTowerUpgrade = card.id == 5 and existingId == 5
+
+    if not isTowerUpgrade and not gameplay.canPlaceAt(game, grid, x, y) then
+        player.returnCardToHand(card)
+        game.message = "Case indisponible."
+        return false
+    end
+
+    if card.id == 2 and player.max_park_on_grid then
+        local parkCount = gameplay.countPlacedOrCommitted(game, grid, 2)
+        if parkCount >= player.max_park_on_grid then
+            player.returnCardToHand(card)
+            game.message = "Maximum " .. player.max_park_on_grid .. " Park sur la grille."
+            return false
+        end
+    end
+
+    table.insert(game.pending_placements, {
+        x = x,
+        y = y,
+        card = card,
+        upgrade = isTowerUpgrade
+    })
     game.selected_hand_index = nil
-    game.message = card.name .. " prete a etre construite."
+    if isTowerUpgrade then
+        game.message = card.name .. " va ameliorer l'Immeuble."
+    else
+        game.message = card.name .. " prete a etre construite."
+    end
     return true
 end
 

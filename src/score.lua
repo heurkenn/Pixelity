@@ -2,26 +2,31 @@
 
 local score = {}
 local grid = require("src.grid")
-local buildings = require("src.buildings")
+local buildings = require("src.data.buildings")
 
 local HOUSE_ID = 1
 local ADJACENCY_KEYS = {
     house = "houses",
     park = "parks",
-    factory = "factories"
+    factory = "factories",
+    bank = "banks",
+    tower = "towers"
 }
 local BUILDING_NAMES = {
     [1] = "house",
     [2] = "park",
     [3] = "factory",
-    [4] = "bank"
+    [4] = "bank",
+    [5] = "tower"
 }
 
 local function getAdjacencyCounts(x, y)
     local counts = {
         houses = 0,
         parks = 0,
-        factories = 0
+        factories = 0,
+        banks = 0,
+        towers = 0
     }
 
     for _, neighborId in ipairs(grid.getNeighbors(x, y)) do
@@ -31,6 +36,10 @@ local function getAdjacencyCounts(x, y)
             counts.parks = counts.parks + 1
         elseif neighborId == 3 then
             counts.factories = counts.factories + 1
+        elseif neighborId == 4 then
+            counts.banks = counts.banks + 1
+        elseif neighborId == 5 then
+            counts.towers = counts.towers + 1
         end
     end
 
@@ -155,7 +164,60 @@ local function getMayorModifier(mayorEffects, modifierType, source, target)
     return total
 end
 
-function score.getBuildingValue(buildingId, adjacencyCounts, mayorEffects)
+local function applyBuildingLevel(source, x, y, value)
+    if source ~= "tower" then
+        return value
+    end
+
+    -- Each extra Immeuble level doubles the final value of that tile.
+    local level = grid.getCellLevel(x, y)
+    if level <= 1 then
+        return value
+    end
+
+    return value * (2 ^ (level - 1))
+end
+
+local function applyLeafEnjoyerRule(mayorEffects, source, adjacencyCounts, value)
+    if source ~= "park" then
+        return value
+    end
+
+    for _, effect in ipairs(mayorEffects or {}) do
+        if effect.type == "park_isolation_rule" then
+            -- Parks only keep their value if they stay next to other parks or empty cells.
+            local differentBuildingCount =
+                (adjacencyCounts.houses or 0) +
+                (adjacencyCounts.factories or 0) +
+                (adjacencyCounts.banks or 0) +
+                (adjacencyCounts.towers or 0)
+
+            if differentBuildingCount > 0 then
+                return 0
+            end
+
+            return value * effect.multiplier
+        end
+    end
+
+    return value
+end
+
+local function applyBossOverrides(currentBoss, source, value)
+    if not currentBoss then
+        return value
+    end
+
+    for _, effect in ipairs(currentBoss.effects or {}) do
+        if effect.type == "fixed_building_value" and effect.source == source then
+            return effect.value
+        end
+    end
+
+    return value
+end
+
+function score.getBuildingValue(buildingId, x, y, adjacencyCounts, mayorEffects, currentBoss)
     local building = buildings.getData(buildingId)
     if not building then
         return 0
@@ -175,6 +237,10 @@ function score.getBuildingValue(buildingId, adjacencyCounts, mayorEffects)
         end
     end
 
+    value = applyLeafEnjoyerRule(mayorEffects, source, adjacencyCounts, value)
+    value = applyBossOverrides(currentBoss, source, value)
+    value = applyBuildingLevel(source, x, y, value)
+
     return value
 end
 
@@ -189,7 +255,7 @@ function score.calculateBoard(player)
             local buildingId = grid.getCell(x, y)
 
             if buildingId and buildingId > 0 and buildingId ~= grid.getObstacleId() then
-                local points = score.getBuildingValue(buildingId, getAdjacencyCounts(x, y), mayorEffects)
+                local points = score.getBuildingValue(buildingId, x, y, getAdjacencyCounts(x, y), mayorEffects, player and player.current_boss or nil)
                 total = total + points
 
                 table.insert(resolution, {

@@ -179,7 +179,28 @@ function layout.updateButtons(game, mayorTypes, difficulties, scoringSpeedOption
 
     game.menu_buttons = {
         play = layout.centerRectInRect({ x = 0, y = 286, w = width, h = 64 }, 260, 64),
-        options = layout.centerRectInRect({ x = 0, y = 370, w = width, h = 56 }, 220, 56)
+        continue = layout.centerRectInRect({ x = 0, y = 366, w = width, h = 54 }, 240, 54),
+        new_game = layout.centerRectInRect({ x = 0, y = 430, w = width, h = 54 }, 240, 54),
+        stats = layout.centerRectInRect({ x = 0, y = 508, w = width, h = 54 }, 220, 54),
+        options = layout.centerRectInRect({ x = 0, y = 574, w = width, h = 56 }, 220, 56)
+    }
+
+    local statsPanel = layout.centerRectInRect({ x = 0, y = 0, w = width, h = height }, 520, 420)
+    local statsInner = layout.insetRect(statsPanel, 28, 80)
+    game.stats_modal = {
+        panel = statsPanel,
+        close = {
+            x = statsPanel.x + statsPanel.w - 54,
+            y = statsPanel.y + 16,
+            w = 38,
+            h = 38
+        },
+        lines = {
+            x = statsInner.x,
+            y = statsInner.y,
+            w = statsInner.w,
+            h = statsInner.h
+        }
     }
 
     local centeredModal = layout.centerRectInRect({ x = 0, y = 0, w = width, h = height }, 520, 360)
@@ -222,6 +243,13 @@ function layout.updateButtons(game, mayorTypes, difficulties, scoringSpeedOption
         y = optionsInner.y + 120,
         w = 240,
         h = 48
+    }
+
+    game.options_back_to_menu_button = {
+        x = optionsInner.x + ((optionsInner.w - 240) / 2),
+        y = centeredModal.y + centeredModal.h - 74,
+        w = 240,
+        h = 44
     }
 
     local codexPanel = layout.centerRectInRect({ x = 0, y = 0, w = width, h = height }, 800, 560)
@@ -398,18 +426,36 @@ function layout.updateButtons(game, mayorTypes, difficulties, scoringSpeedOption
             { id = "shop" },
             { id = "options" },
             { id = "codex" },
-            { id = "deck" }
+            { id = "deck" },
+            { id = "boss_intro" },
+            { id = "boss_earthquake" },
+            { id = "boss_tsunami" },
+            { id = "boss_lactose" },
+            { id = "boss_dark" },
+            { id = "boss_renovation" }
         }
     }
 
     local debugContentArea = layout.insetRect(debugPanel, 28, 96)
-    local debugRects = layout.distributeGridInRect(debugContentArea, #game.debug_buttons.scenarios, 2, 64, 20, 18)
+    local columns = 2
+    local gapX = 20
+    local gapY = 18
+    local itemHeight = 64
+    local itemWidth = math.floor((debugContentArea.w - ((columns - 1) * gapX)) / columns)
+    local rows = math.ceil(#game.debug_buttons.scenarios / columns)
+    local contentHeight = (rows * itemHeight) + ((rows - 1) * gapY)
+    game.debug_scroll_max = math.max(0, contentHeight - debugContentArea.h)
+    game.debug_scroll = math.max(0, math.min(game.debug_scroll or 0, game.debug_scroll_max))
+    game.debug_content_area = debugContentArea
 
     for index, button in ipairs(game.debug_buttons.scenarios) do
-        button.x = debugRects[index].x
-        button.y = debugRects[index].y
-        button.w = debugRects[index].w
-        button.h = debugRects[index].h
+        local column = (index - 1) % columns
+        local row = math.floor((index - 1) / columns)
+        button.x = debugContentArea.x + (column * (itemWidth + gapX))
+        button.base_y = debugContentArea.y + (row * (itemHeight + gapY))
+        button.y = button.base_y - (game.debug_scroll or 0)
+        button.w = itemWidth
+        button.h = itemHeight
     end
 end
 

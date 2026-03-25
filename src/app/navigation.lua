@@ -1,7 +1,7 @@
 -- src/app/navigation.lua
 -- Small state-navigation helpers for entry flow and mayor selection.
 
-local mayor = require("src.mayor")
+local mayor = require("src.data.mayor")
 
 local navigation = {}
 
@@ -32,6 +32,8 @@ function navigation.openMenu(game)
     game.state = "menu"
     game.debug_open = false
     game.options_open = false
+    game.stats_open = false
+    game.menu_play_open = false
 end
 
 return navigation

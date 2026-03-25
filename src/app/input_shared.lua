@@ -3,7 +3,10 @@
 
 local shared = {}
 
-function shared.handleOptionsClick(game, layout, x, y)
+function shared.handleOptionsClick(ctx, x, y)
+    local game = ctx.game
+    local layout = ctx.layout
+
     if layout.pointInRect(x, y, game.options_modal.close) or not layout.pointInRect(x, y, game.options_modal.panel) then
         game.options_open = false
         return true
@@ -19,6 +22,15 @@ function shared.handleOptionsClick(game, layout, x, y)
 
     if layout.pointInRect(x, y, game.confirm_toggle_button) then
         game.confirm_empty_build_enabled = not game.confirm_empty_build_enabled
+        return true
+    end
+
+    if layout.pointInRect(x, y, game.options_back_to_menu_button) then
+        game.options_open = false
+        if game.state == "playing" then
+            ctx.save.saveRun(game, ctx.player, ctx.grid)
+        end
+        ctx.navigation.openMenu(game)
         return true
     end
 

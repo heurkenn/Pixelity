@@ -1,8 +1,9 @@
 -- src/shop.lua
+-- Shop data shaping, offer layout, buy/sell logic and mayor-aware prices.
 
-local buildings = require("src.buildings")
-local law = require("src.law")
-local object = require("src.object")
+local buildings = require("src.data.buildings")
+local law = require("src.data.law")
+local object = require("src.data.object")
 local layout = require("src.layout")
 
 local shop = {}
@@ -25,15 +26,6 @@ local function buildButton(item, section, x, y, w, h)
     return button
 end
 
-local function isHidden(game, section, id)
-    return game.shop_hidden_entries and game.shop_hidden_entries[section .. ":" .. tostring(id)] == true
-end
-
-function shop.hideEntry(game, section, id)
-    game.shop_hidden_entries = game.shop_hidden_entries or {}
-    game.shop_hidden_entries[section .. ":" .. tostring(id)] = true
-end
-
 local function hasValue(list, value)
     for _, item in ipairs(list or {}) do
         if item == value then
@@ -43,42 +35,150 @@ local function hasValue(list, value)
     return false
 end
 
-function shop.prepareOffers(game, player)
-    local availableBuildings = {}
-    game.shop_offers = game.shop_offers or { buildings = {} }
+local function takeRandomIds(sourceIds, amount, excludedIds)
+    local pool = {}
+    local picked = {}
 
+    for _, id in ipairs(sourceIds or {}) do
+        if not hasValue(excludedIds, id) then
+            table.insert(pool, id)
+        end
+    end
+
+    while #picked < math.min(amount, #pool) do
+        local pickIndex = love.math.random(1, #pool)
+        table.insert(picked, table.remove(pool, pickIndex))
+    end
+
+    return picked
+end
+
+local function getItemPrice(player, itemData)
+    -- Some mayors alter only shop object prices, not the base object data itself.
+    local multiplier = player and player.object_price_multiplier or 1
+    return math.floor((itemData.price or 0) * multiplier)
+end
+
+local function isHidden(game, section, id)
+    return game.shop_hidden_entries and game.shop_hidden_entries[section .. ":" .. tostring(id)] == true
+end
+
+local function collectAvailableLawIds(game, player)
+    local ids = {}
+    for _, lawData in ipairs(law.types) do
+        local copyCount = player and player.countLawCopies(lawData.id) or 0
+        local canAppear = copyCount == 0 or (player.allow_duplicate_laws and copyCount < 2)
+        if canAppear and not isHidden(game, "law", lawData.id) then
+            table.insert(ids, lawData.id)
+        end
+    end
+    return ids
+end
+
+local function collectAvailableBuildingIds(game)
+    local ids = {}
     for _, building in ipairs(buildings.types) do
-        if not isHidden(game, "building", building.id) then
-            table.insert(availableBuildings, building.id)
+        if building.shop_only and not isHidden(game, "building", building.id) then
+            table.insert(ids, building.id)
+        end
+    end
+    return ids
+end
+
+local function collectAvailableItemIds(game, player)
+    local ids = {}
+    if player.MAX_ITEMS <= 0 then
+        return ids
+    end
+    for _, item in ipairs(object.types) do
+        if not isHidden(game, "item", item.id) then
+            table.insert(ids, item.id)
+        end
+    end
+    return ids
+end
+
+function shop.getDisplayPrice(player, entry)
+    if entry.section == "item" then
+        return getItemPrice(player, entry)
+    end
+    return entry.price
+end
+
+function shop.hideEntry(game, section, id)
+    game.shop_hidden_entries = game.shop_hidden_entries or {}
+    game.shop_hidden_entries[section .. ":" .. tostring(id)] = true
+end
+
+function shop.rollOffers(game, player)
+    game.shop_offers = {
+        laws = takeRandomIds(collectAvailableLawIds(game, player), 3),
+        buildings = takeRandomIds(collectAvailableBuildingIds(game), 2),
+        items = takeRandomIds(collectAvailableItemIds(game, player), 2)
+    }
+end
+
+function shop.prepareOffers(game, player)
+    game.shop_offers = game.shop_offers or {
+        laws = {},
+        buildings = {},
+        items = {}
+    }
+
+    local filteredLaws = {}
+    for _, lawId in ipairs(game.shop_offers.laws or {}) do
+        if not isHidden(game, "law", lawId) and hasValue(collectAvailableLawIds(game, player), lawId) then
+            table.insert(filteredLaws, lawId)
         end
     end
 
-    if #game.shop_offers.buildings == 0 then
-        while #game.shop_offers.buildings < math.min(2, #availableBuildings) do
-            local pickIndex = love.math.random(1, #availableBuildings)
-            local pickedId = table.remove(availableBuildings, pickIndex)
-            table.insert(game.shop_offers.buildings, pickedId)
-        end
-        return
-    end
-
-    local nextOffers = {}
-    for _, buildingId in ipairs(game.shop_offers.buildings) do
+    local filteredBuildings = {}
+    for _, buildingId in ipairs(game.shop_offers.buildings or {}) do
         if not isHidden(game, "building", buildingId) then
-            table.insert(nextOffers, buildingId)
+            table.insert(filteredBuildings, buildingId)
         end
     end
 
-    for _, buildingId in ipairs(availableBuildings) do
-        if #nextOffers >= 2 then
-            break
-        end
-        if not hasValue(nextOffers, buildingId) then
-            table.insert(nextOffers, buildingId)
+    local filteredItems = {}
+    for _, itemId in ipairs(game.shop_offers.items or {}) do
+        if not isHidden(game, "item", itemId) then
+            table.insert(filteredItems, itemId)
         end
     end
 
-    game.shop_offers.buildings = nextOffers
+    game.shop_offers.laws = filteredLaws
+    game.shop_offers.buildings = filteredBuildings
+    game.shop_offers.items = filteredItems
+
+    if #game.shop_offers.laws < 3 then
+        local extraLawIds = takeRandomIds(collectAvailableLawIds(game, player), 3 - #game.shop_offers.laws, game.shop_offers.laws)
+        for _, lawId in ipairs(extraLawIds) do
+            table.insert(game.shop_offers.laws, lawId)
+        end
+    end
+    if #game.shop_offers.buildings < 2 then
+        local extraBuildingIds = takeRandomIds(collectAvailableBuildingIds(game), 2 - #game.shop_offers.buildings, game.shop_offers.buildings)
+        for _, buildingId in ipairs(extraBuildingIds) do
+            table.insert(game.shop_offers.buildings, buildingId)
+        end
+    end
+    if #game.shop_offers.items < 2 then
+        local extraItemIds = takeRandomIds(collectAvailableItemIds(game, player), 2 - #game.shop_offers.items, game.shop_offers.items)
+        for _, itemId in ipairs(extraItemIds) do
+            table.insert(game.shop_offers.items, itemId)
+        end
+    end
+end
+
+function shop.refreshOffers(game, player)
+    local price = 5
+    if not player.spendMoney(price) then
+        return false, "Pas assez de pieces pour rafraichir."
+    end
+
+    shop.rollOffers(game, player)
+
+    return true, "Shop rafraichi pour 5 pieces."
 end
 
 function shop.updateLayout(game, player)
@@ -105,8 +205,6 @@ function shop.updateLayout(game, player)
         w = panelX + panelW - (buildingSection.x + buildingSection.w + 48),
         h = 186
     }
-    local availableLaws = {}
-
     game.shop_layout = {
         panel = {
             x = panelX,
@@ -127,73 +225,39 @@ function shop.updateLayout(game, player)
 
     shop.prepareOffers(game, player)
 
-    for _, lawData in ipairs(law.types) do
-        local alreadyOwned = player and player.hasLaw(lawData.id)
-        if (not alreadyOwned or (player and player.allow_duplicate_laws)) and not isHidden(game, "law", lawData.id) then
-            table.insert(availableLaws, lawData)
-        end
-    end
-
-    while #availableLaws > 3 do
-        table.remove(availableLaws)
-    end
-
-    local lawGap = 12
-    local lawCardH = 150
-    local lawCardW = 190
     local lawArea = layout.insetRect(topSection, 12, 42)
-    local lawRects = layout.distributeRowInRect(lawArea, #availableLaws, lawCardW, lawCardH, lawGap)
-    for index, lawData in ipairs(availableLaws) do
+    local lawRects = layout.distributeRowInRect(lawArea, #game.shop_offers.laws, 190, 150, 12)
+    for index, lawId in ipairs(game.shop_offers.laws or {}) do
+        local lawData = law.getData(lawId)
         local rect = lawRects[index]
-        game.shop_buttons.laws[index] = buildButton(
-            lawData,
-            "law",
-            rect.x,
-            rect.y,
-            rect.w,
-            rect.h
-        )
+        game.shop_buttons.laws[index] = buildButton(lawData, "law", rect.x, rect.y, rect.w, rect.h)
+        game.shop_buttons.laws[index].display_price = shop.getDisplayPrice(player, game.shop_buttons.laws[index])
     end
 
-    local buildingCardW = 166
-    local buildingCardH = 118
-    local buildingGap = 12
     local buildingArea = layout.insetRect(buildingSection, 12, 40)
-    local buildingRects = layout.distributeRowInRect(buildingArea, #game.shop_offers.buildings, buildingCardW, buildingCardH, buildingGap)
+    local buildingRects = layout.distributeRowInRect(buildingArea, #game.shop_offers.buildings, 166, 118, 12)
     for index, buildingId in ipairs(game.shop_offers.buildings) do
-        local building = buildings.getData(buildingId)
+        local buildingData = buildings.getData(buildingId)
         local rect = buildingRects[index]
-        game.shop_buttons.buildings[index] = buildButton(
-            building,
-            "building",
-            rect.x,
-            rect.y,
-            rect.w,
-            rect.h
-        )
-    end
-
-    local availableItems = {}
-    for _, item in ipairs(object.types) do
-        if not isHidden(game, "item", item.id) then
-            table.insert(availableItems, item)
-        end
+        game.shop_buttons.buildings[index] = buildButton(buildingData, "building", rect.x, rect.y, rect.w, rect.h)
+        game.shop_buttons.buildings[index].display_price = shop.getDisplayPrice(player, game.shop_buttons.buildings[index])
     end
 
     local itemArea = layout.insetRect(objectSection, 12, 40)
-    local itemRects = layout.distributeRowInRect(itemArea, #availableItems, 150, 118, 10)
-    for index, item in ipairs(availableItems) do
+    local itemRects = layout.distributeRowInRect(itemArea, #game.shop_offers.items, 150, 118, 10)
+    for index, itemId in ipairs(game.shop_offers.items or {}) do
+        local item = object.getData(itemId)
         local rect = itemRects[index]
-        game.shop_buttons.items[index] = buildButton(
-            item,
-            "item",
-            rect.x,
-            rect.y,
-            rect.w,
-            rect.h
-        )
+        game.shop_buttons.items[index] = buildButton(item, "item", rect.x, rect.y, rect.w, rect.h)
+        game.shop_buttons.items[index].display_price = shop.getDisplayPrice(player, game.shop_buttons.items[index])
     end
 
+    game.round_clear_buttons.refresh = {
+        x = panelX + 24,
+        y = panelY + panelH - 78,
+        w = 180,
+        h = 54
+    }
     game.round_clear_buttons.continue = layout.centerRectInRect(
         {
             x = panelX,
@@ -220,14 +284,16 @@ function shop.buyBuilding(player, buildingId)
 end
 
 function shop.buyLaw(player, lawId)
-    local targetLaw = nil
-    targetLaw = law.getData(lawId)
-
+    local targetLaw = law.getData(lawId)
     if not targetLaw then
         return false, "Loi introuvable."
     end
-    if player.hasLaw(lawId) and not player.allow_duplicate_laws then
+    local copyCount = player.countLawCopies(lawId)
+    if copyCount > 0 and not player.allow_duplicate_laws then
         return false, "Loi deja possedee."
+    end
+    if player.allow_duplicate_laws and copyCount >= 2 then
+        return false, "Maximum 2 exemplaires de cette loi."
     end
     if #player.laws >= player.MAX_LAWS then
         return false, "Maximum " .. player.MAX_LAWS .. " lois."
@@ -241,16 +307,16 @@ function shop.buyLaw(player, lawId)
 end
 
 function shop.buyItem(player, itemId)
-    local targetItem = nil
-    targetItem = object.getData(itemId)
-
+    local targetItem = object.getData(itemId)
     if not targetItem then
         return false, "Objet introuvable."
     end
     if #player.items >= player.MAX_ITEMS then
         return false, "Maximum " .. player.MAX_ITEMS .. " objets."
     end
-    if not player.spendMoney(targetItem.price) then
+
+    local price = getItemPrice(player, targetItem)
+    if not player.spendMoney(price) then
         return false, "Pas assez de pieces."
     end
 

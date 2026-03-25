@@ -9,9 +9,23 @@ local board = require("src.helpers.board")
 
 local play = {}
 
+local function shouldHideHand(player)
+    for _, effect in ipairs(player.current_boss and player.current_boss.effects or {}) do
+        if effect.type == "hide_hand_cards" then
+            return true
+        end
+    end
+    return false
+end
+
+local function shouldHideBoard(game)
+    return shouldHideHand({ current_boss = game.current_boss })
+end
+
 function play.drawGrid(game, grid, buildings, getPendingPlacementAt)
     local cells = grid.getCells()
     local offsetX, offsetY = layout.getGridOffset()
+    local hidden = shouldHideBoard(game)
 
     for y = 1, constants.GRID_SIZE do
         for x = 1, constants.GRID_SIZE do
@@ -31,26 +45,32 @@ function play.drawGrid(game, grid, buildings, getPendingPlacementAt)
 
             local buildingID = cells[y][x]
             if buildingID ~= 0 then
-                board.drawBuildingTile(buildings, grid, buildingID, posX, posY, 1)
+                board.drawBuildingTile(buildings, grid, buildingID, posX, posY, 1, x, y, hidden and buildingID ~= grid.getObstacleId())
             end
 
             if pendingPlacement then
                 love.graphics.setColor(1, 1, 1, 0.2)
                 love.graphics.rectangle("fill", posX, posY, constants.TILE_SIZE, constants.TILE_SIZE)
-                board.drawBuildingTile(buildings, grid, pendingPlacement.card.id, posX, posY, 0.8)
+                board.drawBuildingTile(buildings, grid, pendingPlacement.card.id, posX, posY, 0.8, x, y, hidden)
             end
         end
     end
 end
 
 function play.drawHand(game, player)
+    local hidden = shouldHideHand(player)
+
     if game.dealing_timer > 0 then
         local progress = 1 - (game.dealing_timer / 0.75)
         for index, card in ipairs(player.hand) do
             local targetX, targetY = layout.getCardRect(index, #player.hand)
             local fromY = love.graphics.getHeight() + 120
             local animatedY = fromY + ((targetY - fromY) * math.min(progress * 1.15, 1))
-            cards.drawHandCard(card, targetX, animatedY, game.selected_hand_index == index)
+            if hidden then
+                cards.drawHiddenHandCard(targetX, animatedY, game.selected_hand_index == index)
+            else
+                cards.drawHandCard(card, targetX, animatedY, game.selected_hand_index == index)
+            end
         end
         return
     end
@@ -58,18 +78,31 @@ function play.drawHand(game, player)
     for index, card in ipairs(player.hand) do
         local cardX, cardY = layout.getCardRect(index, #player.hand)
         if not (game.dragging.active and game.dragging.hand_index == index) then
-            cards.drawHandCard(card, cardX, cardY, game.selected_hand_index == index)
+            if hidden then
+                cards.drawHiddenHandCard(cardX, cardY, game.selected_hand_index == index)
+            else
+                cards.drawHandCard(card, cardX, cardY, game.selected_hand_index == index)
+            end
         end
     end
 
     if game.dragging.active and game.dragging.card then
-        cards.drawHandCard(
-            game.dragging.card,
-            game.dragging.x - game.dragging.offset_x,
-            game.dragging.y - game.dragging.offset_y,
-            true,
-            0.92
-        )
+        if hidden then
+            cards.drawHiddenHandCard(
+                game.dragging.x - game.dragging.offset_x,
+                game.dragging.y - game.dragging.offset_y,
+                true,
+                0.92
+            )
+        else
+            cards.drawHandCard(
+                game.dragging.card,
+                game.dragging.x - game.dragging.offset_x,
+                game.dragging.y - game.dragging.offset_y,
+                true,
+                0.92
+            )
+        end
     end
 end
 
@@ -99,6 +132,17 @@ function play.drawHUD(game, player)
 
     love.graphics.setColor(1, 1, 1)
     love.graphics.printf("Objectif: " .. game.target_score, 0, 24, love.graphics.getWidth(), "center")
+
+    love.graphics.setColor(0.22, 0.26, 0.3)
+    love.graphics.rectangle("fill", 18, 18, 120, 56, 12, 12)
+    fonts.drawOutlinedText(tostring(player.money), 18, 24, {
+        font = fonts.getScoreFont(),
+        mode = "printf",
+        limit = 120,
+        align = "center",
+        outline = 1
+    })
+
     fonts.drawOutlinedText(scoreText, math.floor(scoreX - (scoreWidth / 2)), math.floor(scoreY), {
         font = fonts.getScoreFont(),
         outline = 1

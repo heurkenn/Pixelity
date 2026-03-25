@@ -13,11 +13,16 @@ function input_play.handleClick(ctx, x, y)
     local grid = ctx.grid
     local score = ctx.score
     local shop = ctx.shop
+    local profile = ctx.profile
+    local save = ctx.save
 
     if game.confirm_empty_build_open then
         if layout.pointInRect(x, y, game.confirm_modal.yes) then
+            local placedCount = #game.pending_placements
             game.confirm_empty_build_open = false
             gameplay.finalizeBuild(game, player, grid, score)
+            profile.recordBuildingsPlaced(placedCount)
+            save.saveRun(game, player, grid)
             return true
         end
 
@@ -66,7 +71,7 @@ function input_play.handleClick(ctx, x, y)
     end
 
     if game.options_open then
-        return shared.handleOptionsClick(game, layout, x, y)
+        return shared.handleOptionsClick(ctx, x, y)
     end
 
     if layout.pointInRect(x, y, game.build_button) then
@@ -74,7 +79,10 @@ function input_play.handleClick(ctx, x, y)
             game.confirm_empty_build_open = true
             return true
         end
+        local placedCount = #game.pending_placements
         gameplay.finalizeBuild(game, player, grid, score)
+        profile.recordBuildingsPlaced(placedCount)
+        save.saveRun(game, player, grid)
         return true
     end
 
@@ -101,7 +109,11 @@ function input_play.handleClick(ctx, x, y)
     local gridX, gridY = layout.getCellFromScreen(x, y, grid)
     if gridX and gridY then
         if game.selected_item_index and player.items[game.selected_item_index] and player.items[game.selected_item_index].id == "explosive" then
-            local _, message = gameplay.useExplosive(game, player, grid, gridX, gridY)
+            local used, message = gameplay.useExplosive(game, player, grid, gridX, gridY)
+            if used then
+                profile.recordObstacleDestroyed(1)
+                save.saveRun(game, player, grid)
+            end
             game.message = message
             return true
         end
@@ -174,7 +186,10 @@ end
 
 function input_play.handleKey(ctx, key)
     if key == "return" and ctx.game.state == "playing" then
+        local placedCount = #ctx.game.pending_placements
         ctx.gameplay.finalizeBuild(ctx.game, ctx.player, ctx.grid, ctx.score)
+        ctx.profile.recordBuildingsPlaced(placedCount)
+        ctx.save.saveRun(ctx.game, ctx.player, ctx.grid)
     end
 end
 

@@ -30,7 +30,16 @@ function input.mousepressed(ctx, x, y, button)
     end
 
     if game.state == "gameover" then
+        ctx.profile.finishRun(game, ctx.player, game.round >= require("src.data.rounds").getFinalRound())
+        ctx.save.clear(game)
         navigation.openMenu(game)
+        return
+    end
+
+    if game.state == "boss_intro" then
+        if game.boss_intro and game.boss_intro.continue_ready and game.boss_intro.continue_button and ctx.layout.pointInRect(x, y, game.boss_intro.continue_button) then
+            ctx.gameplay.startBossRound(game, ctx.player, ctx.grid)
+        end
         return
     end
 
@@ -60,7 +69,18 @@ function input.keypressed(ctx, key)
         end
     elseif game.state == "playing" then
         input_play.handleKey(ctx, key)
+    elseif game.state == "boss_intro" and key == "return" and game.boss_intro and game.boss_intro.continue_ready then
+        ctx.gameplay.startBossRound(game, ctx.player, ctx.grid)
     end
+end
+
+function input.wheelmoved(ctx, _, y)
+    local game = ctx.game
+    if game.state ~= "menu" or not game.debug_open then
+        return
+    end
+
+    game.debug_scroll = math.max(0, math.min(game.debug_scroll_max or 0, (game.debug_scroll or 0) - (y * 28)))
 end
 
 return input

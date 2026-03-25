@@ -36,6 +36,25 @@ function options.draw(game)
         "center"
     )
 
+    love.graphics.setColor(0.52, 0.2, 0.2)
+    love.graphics.rectangle(
+        "fill",
+        game.options_back_to_menu_button.x,
+        game.options_back_to_menu_button.y,
+        game.options_back_to_menu_button.w,
+        game.options_back_to_menu_button.h,
+        10,
+        10
+    )
+    love.graphics.setColor(1, 1, 1)
+    love.graphics.printf(
+        "MENU PRINCIPAL",
+        game.options_back_to_menu_button.x,
+        game.options_back_to_menu_button.y + 14,
+        game.options_back_to_menu_button.w,
+        "center"
+    )
+
     love.graphics.setColor(0.3, 0.2, 0.2)
     love.graphics.rectangle("fill", modal.close.x, modal.close.y, modal.close.w, modal.close.h, 10, 10)
     love.graphics.setColor(1, 1, 1)

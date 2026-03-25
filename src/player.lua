@@ -1,7 +1,7 @@
 -- src/player.lua
 
 local player = {}
-local buildings = require("src.buildings")
+local buildings = require("src.data.buildings")
 
 local DEFAULT_HAND_SIZE = 5
 local DEFAULT_BUILD_ACTIONS = 3
@@ -31,7 +31,12 @@ player.items = {}
 player.MAX_ITEMS = DEFAULT_MAX_ITEMS
 player.allow_duplicate_laws = false
 player.explosive_preserve_chance = 0
+player.explosive_money_loss_chance = 0
+player.explosive_money_loss_fraction = 0
 player.bank_money_multiplier = 1
+player.object_price_multiplier = 1
+player.max_park_on_grid = nil
+player.current_boss = nil
 player.available_builds = DEFAULT_BUILD_ACTIONS
 player.available_redraws = DEFAULT_REDRAWS
 player.hand_size = DEFAULT_HAND_SIZE
@@ -39,7 +44,7 @@ player.hand_can_redraw = true
 player.deck_empty = false
 
 function player.setMayor(mayorID)
-    local mayorData = require("src.mayor").getData(mayorID)
+    local mayorData = require("src.data.mayor").getData(mayorID)
     if mayorData then
         player.mayor = mayorData
     end
@@ -66,7 +71,12 @@ function player.reset()
     player.MAX_ITEMS = DEFAULT_MAX_ITEMS
     player.allow_duplicate_laws = false
     player.explosive_preserve_chance = 0
+    player.explosive_money_loss_chance = 0
+    player.explosive_money_loss_fraction = 0
     player.bank_money_multiplier = 1
+    player.object_price_multiplier = 1
+    player.max_park_on_grid = nil
+    player.current_boss = nil
     player.available_builds = DEFAULT_BUILD_ACTIONS
     player.available_redraws = DEFAULT_REDRAWS
     player.hand_can_redraw = true
@@ -209,6 +219,16 @@ function player.hasLaw(lawId)
         end
     end
     return false
+end
+
+function player.countLawCopies(lawId)
+    local count = 0
+    for _, law in ipairs(player.laws) do
+        if law.id == lawId then
+            count = count + 1
+        end
+    end
+    return count
 end
 
 function player.addLaw(law)

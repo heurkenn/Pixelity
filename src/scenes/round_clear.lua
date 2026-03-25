@@ -7,24 +7,30 @@ local cards = require("src.helpers.cards")
 local round_clear = {}
 
 local function getShopCardState(player, entry)
+    local price = entry.display_price or entry.price
+
     if entry.section == "law" then
-        if player.hasLaw(entry.id) and not player.allow_duplicate_laws then
+        local copyCount = player.countLawCopies(entry.id)
+        if copyCount > 0 and not player.allow_duplicate_laws then
             return "owned"
         end
-        if #player.laws >= player.MAX_LAWS or player.money < entry.price then
+        if player.allow_duplicate_laws and copyCount >= 2 then
+            return "blocked"
+        end
+        if #player.laws >= player.MAX_LAWS or player.money < price then
             return "blocked"
         end
         return "enabled"
     end
 
     if entry.section == "item" then
-        if #player.items >= player.MAX_ITEMS or player.money < entry.price then
+        if #player.items >= player.MAX_ITEMS or player.money < price then
             return "blocked"
         end
         return "enabled"
     end
 
-    if player.money < entry.price then
+    if player.money < price then
         return "blocked"
     end
     return "enabled"
@@ -113,6 +119,10 @@ function round_clear.draw(game, player)
         lineY = lineY + 24
         love.graphics.printf("Mains restantes " .. clear.remaining_hands .. ": +1*" .. clear.remaining_hands, panel.x + 24, lineY, panel.w - 48, "left")
         lineY = lineY + 24
+        if clear.reward_bank and clear.reward_bank > 0 then
+            love.graphics.printf("Pieces encaissees : " .. clear.reward_bank, panel.x + 24, lineY, panel.w - 48, "left")
+            lineY = lineY + 24
+        end
         love.graphics.printf("Total: +" .. clear.total_reward .. " pieces", panel.x + 24, lineY, panel.w - 48, "left")
 
         love.graphics.setColor(0.18, 0.44, 0.3)
@@ -142,7 +152,7 @@ function round_clear.draw(game, player)
                 entry,
                 entry.name,
                 "+" .. (effect.bonus or 0) .. " / " .. (effect.segment_size or 0) .. " maisons",
-                entry.price,
+                entry.display_price or entry.price,
                 getShopCardState(player, entry)
             )
         end
@@ -152,7 +162,7 @@ function round_clear.draw(game, player)
         love.graphics.setColor(1, 1, 1)
         love.graphics.printf("BATIMENTS", shopLayout.buildings.x, shopLayout.buildings.y + 12, shopLayout.buildings.w, "center")
         for _, entry in ipairs(game.shop_buttons.buildings or {}) do
-            cards.drawShopEntryCard(entry, entry.name, "Base " .. entry.base_score, entry.price, getShopCardState(player, entry))
+            cards.drawShopEntryCard(entry, entry.name, "Base " .. entry.base_score, entry.display_price or entry.price, getShopCardState(player, entry))
         end
 
         love.graphics.setColor(0.16, 0.2, 0.26)
@@ -160,11 +170,17 @@ function round_clear.draw(game, player)
         love.graphics.setColor(1, 1, 1)
         love.graphics.printf("OBJETS", shopLayout.objects.x, shopLayout.objects.y + 12, shopLayout.objects.w, "center")
         for _, entry in ipairs(game.shop_buttons.items or {}) do
-            cards.drawShopEntryCard(entry, entry.name, "Retire 1 obstacle", entry.price, getShopCardState(player, entry))
+            cards.drawShopEntryCard(entry, entry.name, entry.description or "Objet", entry.display_price or entry.price, getShopCardState(player, entry))
         end
 
         love.graphics.printf("Lois: " .. #player.laws .. "/" .. player.MAX_LAWS, shopLayout.laws.x + shopLayout.laws.w - 150, shopLayout.laws.y - 26, 150, "right")
         love.graphics.printf("Objets: " .. #player.items .. "/" .. player.MAX_ITEMS, panel.x + panel.w - 174, panel.y + 312, 150, "right")
+
+        love.graphics.setColor(player.money >= 5 and 0.22 or 0.12, 0.34, 0.48)
+        love.graphics.rectangle("fill", game.round_clear_buttons.refresh.x, game.round_clear_buttons.refresh.y, game.round_clear_buttons.refresh.w, game.round_clear_buttons.refresh.h, 12, 12)
+        love.graphics.setColor(1, 1, 1, player.money >= 5 and 1 or 0.6)
+        love.graphics.printf("RAFRAICHIR", game.round_clear_buttons.refresh.x, game.round_clear_buttons.refresh.y + 11, game.round_clear_buttons.refresh.w, "center")
+        love.graphics.printf("5 pieces", game.round_clear_buttons.refresh.x, game.round_clear_buttons.refresh.y + 28, game.round_clear_buttons.refresh.w, "center")
 
         love.graphics.setColor(0.18, 0.44, 0.3)
         love.graphics.rectangle("fill", game.round_clear_buttons.continue.x, game.round_clear_buttons.continue.y, game.round_clear_buttons.continue.w, game.round_clear_buttons.continue.h, 12, 12)

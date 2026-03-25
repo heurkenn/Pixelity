@@ -1,4 +1,5 @@
--- src/law.lua
+-- src/data/law.lua
+-- Law catalog and passive scoring effects.
 
 local law = {}
 

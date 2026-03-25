@@ -2,6 +2,8 @@
 
 local grid = {}
 local cells = {}
+-- Levels are only used for stackable buildings such as Immeuble.
+local levels = {}
 local size = 0
 local OBSTACLE_ID = 99
 
@@ -11,8 +13,10 @@ function grid.init(gridSize)
 
     for y = 1, size do
         cells[y] = {}
+        levels[y] = {}
         for x = 1, size do
             cells[y][x] = 0
+            levels[y][x] = 0
         end
     end
 end
@@ -70,6 +74,17 @@ end
 function grid.setCell(x, y, value)
     if grid.isInside(x, y) then
         cells[y][x] = value
+        if value == 0 or value == OBSTACLE_ID then
+            levels[y][x] = 0
+        elseif levels[y][x] == 0 then
+            levels[y][x] = 1
+        end
+    end
+end
+
+function grid.setCellLevel(x, y, value)
+    if grid.isInside(x, y) then
+        levels[y][x] = value
     end
 end
 
@@ -78,6 +93,13 @@ function grid.getCell(x, y)
         return cells[y][x]
     end
     return nil
+end
+
+function grid.getCellLevel(x, y)
+    if grid.isInside(x, y) then
+        return levels[y][x]
+    end
+    return 0
 end
 
 function grid.getSize()
@@ -90,6 +112,10 @@ end
 
 function grid.getCells()
     return cells
+end
+
+function grid.getLevels()
+    return levels
 end
 
 return grid

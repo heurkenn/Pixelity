@@ -2,8 +2,11 @@
 -- Handles round lifecycle, BUILD validation, next-round reset and summary generation.
 
 local constants = require("src.constants")
-local buildings = require("src.buildings")
+local buildings = require("src.data.buildings")
+local rounds = require("src.data.rounds")
+local bosses = require("src.systems.bosses")
 local mayor_effects = require("src.systems.mayor_effects")
+local shop = require("src.shop")
 
 local round_flow = {}
 
@@ -36,7 +39,37 @@ function round_flow.beginRound(game, player)
     game.current_score_popup = nil
     game.shop_hidden_entries = {}
     game.shop_offers = nil
+    game.shop_seeded = false
     round_flow.updateHandStatusMessage(game, player, "Nouvelle manche: pioche.")
+end
+
+local function enterPreparedRound(game, player, grid)
+    game.state = "playing"
+    game.grid_ref = grid
+    round_flow.beginRound(game, player)
+end
+
+local function prepareRoundState(game, player, grid, roundNumber)
+    grid.init(constants.GRID_SIZE)
+    game.grid_ref = grid
+    game.round = roundNumber
+    game.target_score = rounds.getTarget(roundNumber)
+
+    local bossData = nil
+    if rounds.isBossRound(roundNumber) then
+        bossData = bosses.getBossForRound(game, roundNumber)
+    end
+
+    game.current_boss = bossData
+    player.current_boss = bossData
+    if bossData then
+        bosses.applyRoundStartEffects(bossData, grid)
+        bosses.prepareBossIntro(game, bossData)
+        return
+    end
+
+    grid.generateObstacles(player.difficulty and player.difficulty.obstacle_count or 0)
+    enterPreparedRound(game, player, grid)
 end
 
 function round_flow.startGame(game, player, grid)
@@ -45,20 +78,16 @@ function round_flow.startGame(game, player, grid)
     mayor_effects.applyPersistentEffects(player)
     player.setDifficulty(round_flow.getDifficulty(game.selected_difficulty_id))
     player.initDeck()
-
-    grid.init(constants.GRID_SIZE)
-    grid.generateObstacles(round_flow.getDifficulty(game.selected_difficulty_id).obstacle_count)
-    game.grid_ref = grid
-
+    game.boss_order = bosses.buildOrder()
     game.round = 1
-    game.target_score = 100
-    game.state = "playing"
+    game.rounds_played = 1
+    game.run_recorded = false
     game.resolving = false
     game.resolution_queue = {}
     game.resolution_index = 0
     game.resolution_timer = 0
     game.current_resolution_score = 0
-    round_flow.beginRound(game, player)
+    prepareRoundState(game, player, grid, 1)
 end
 
 function round_flow.endRoundFailure(game)
@@ -69,6 +98,7 @@ end
 function round_flow.endRoundSuccess(game, player)
     local gainedMoney = 3 + player.available_builds
     local bankReward = 0
+    local countdownDelay = math.max(0.2, 3 / math.max(1, game.scoring_speed or 1))
     local cells = game.grid_ref and game.grid_ref.getCells() or {}
 
     for _, row in ipairs(cells) do
@@ -91,7 +121,7 @@ function round_flow.endRoundSuccess(game, player)
     game.round_clear = {
         phase = "banner",
         banner_timer = 0.9,
-        countdown_delay = 3,
+        countdown_delay = countdownDelay,
         countdown_elapsed = 0,
         score_display = game.current_resolution_score,
         global_score_display = player.total_score,
@@ -102,7 +132,7 @@ function round_flow.endRoundSuccess(game, player)
         total_reward = gainedMoney,
         summary_lines = game.last_build_summary or { "Aucun nouveau batiment place." },
         next_round = game.round + 1,
-        next_target = game.target_score + 25
+        next_target = rounds.getTarget(game.round + 1)
     }
 end
 
@@ -167,10 +197,22 @@ function round_flow.finalizeBuild(game, player, grid, scoreModule)
 
     local committedCards = {}
     for _, placement in ipairs(game.pending_placements) do
-        grid.setCell(placement.x, placement.y, placement.card.id)
+        if placement.upgrade then
+            grid.setCellLevel(placement.x, placement.y, grid.getCellLevel(placement.x, placement.y) + 1)
+        else
+            grid.setCell(placement.x, placement.y, placement.card.id)
+            grid.setCellLevel(placement.x, placement.y, 1)
+        end
         table.insert(committedCards, placement.card)
     end
     player.commitPlacedCards(committedCards)
+
+    local bossOutcome = bosses.applyBuildEffects(game, player, grid)
+    if bossOutcome and bossOutcome.label then
+        game.highlight_cell = {
+            label = bossOutcome.label
+        }
+    end
 
     local _, resolutionQueue = scoreModule.calculateBoard(player)
     game.resolving = true
@@ -192,8 +234,12 @@ function round_flow.openRoundSummary(game)
     end
 end
 
-function round_flow.openShop(game)
+function round_flow.openShop(game, player)
     if game.round_clear then
+        if not game.shop_seeded then
+            shop.rollOffers(game, player)
+            game.shop_seeded = true
+        end
         game.round_clear.phase = "shop"
     end
 end
@@ -203,14 +249,28 @@ function round_flow.startNextRound(game, player, grid)
         return
     end
 
+    if game.round >= rounds.getFinalRound() then
+        game.state = "gameover"
+        game.round_clear = nil
+        game.message = "Run reussie. Clique pour revenir au menu."
+        return
+    end
+
     game.round = game.round_clear.next_round
+    game.rounds_played = (game.rounds_played or game.round) + 1
     game.target_score = game.round_clear.next_target
     game.round_clear = nil
-    game.state = "playing"
-    grid.init(constants.GRID_SIZE)
-    grid.generateObstacles(player.difficulty and player.difficulty.obstacle_count or 0)
     player.initDeck()
-    round_flow.beginRound(game, player)
+    prepareRoundState(game, player, grid, game.round)
+end
+
+function round_flow.startBossRound(game, player, grid)
+    if game.state ~= "boss_intro" then
+        return
+    end
+
+    grid.generateObstacles(player.difficulty and player.difficulty.obstacle_count or 0)
+    enterPreparedRound(game, player, grid)
 end
 
 return round_flow

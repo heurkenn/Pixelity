@@ -3,6 +3,35 @@
 
 local debug_menu = {}
 
+local function getLabel(buttonId)
+    if buttonId == "play" then
+        return "Lancer une partie test"
+    elseif buttonId == "summary" then
+        return "Apercu resume de manche"
+    elseif buttonId == "shop" then
+        return "Apercu direct du shop"
+    elseif buttonId == "options" then
+        return "Popup options"
+    elseif buttonId == "codex" then
+        return "Popup classeur"
+    elseif buttonId == "deck" then
+        return "Popup deck"
+    elseif buttonId == "boss_intro" then
+        return "Intro boss"
+    elseif buttonId == "boss_earthquake" then
+        return "Boss Earthquake"
+    elseif buttonId == "boss_tsunami" then
+        return "Boss Tsunami"
+    elseif buttonId == "boss_lactose" then
+        return "Boss Lactose dog"
+    elseif buttonId == "boss_dark" then
+        return "Boss In the dark"
+    elseif buttonId == "boss_renovation" then
+        return "Boss Renovation"
+    end
+    return buttonId
+end
+
 function debug_menu.draw(game)
     if not game.debug_open then
         return
@@ -23,25 +52,20 @@ function debug_menu.draw(game)
         "center"
     )
 
-    for _, button in ipairs(game.debug_buttons.scenarios or {}) do
-        love.graphics.setColor(0.22, 0.32, 0.42)
-        love.graphics.rectangle("fill", button.x, button.y, button.w, button.h, 12, 12)
-        love.graphics.setColor(1, 1, 1)
+    if game.debug_scroll_max and game.debug_scroll_max > 0 then
+        love.graphics.printf("Molette souris pour defiler", panel.x + 28, panel.y + panel.h - 42, panel.w - 56, "center")
+    end
 
-        if button.id == "play" then
-            love.graphics.printf("Lancer une partie test", button.x, button.y + 18, button.w, "center")
-        elseif button.id == "summary" then
-            love.graphics.printf("Apercu resume de manche", button.x, button.y + 18, button.w, "center")
-        elseif button.id == "shop" then
-            love.graphics.printf("Apercu direct du shop", button.x, button.y + 18, button.w, "center")
-        elseif button.id == "options" then
-            love.graphics.printf("Popup options", button.x, button.y + 18, button.w, "center")
-        elseif button.id == "codex" then
-            love.graphics.printf("Popup classeur", button.x, button.y + 18, button.w, "center")
-        elseif button.id == "deck" then
-            love.graphics.printf("Popup deck", button.x, button.y + 18, button.w, "center")
+    love.graphics.setScissor(game.debug_content_area.x, game.debug_content_area.y, game.debug_content_area.w, game.debug_content_area.h)
+    for _, button in ipairs(game.debug_buttons.scenarios or {}) do
+        if button.y + button.h >= game.debug_content_area.y and button.y <= game.debug_content_area.y + game.debug_content_area.h then
+            love.graphics.setColor(0.22, 0.32, 0.42)
+            love.graphics.rectangle("fill", button.x, button.y, button.w, button.h, 12, 12)
+            love.graphics.setColor(1, 1, 1)
+            love.graphics.printf(getLabel(button.id), button.x, button.y + 18, button.w, "center")
         end
     end
+    love.graphics.setScissor()
 
     love.graphics.setColor(0.3, 0.2, 0.2)
     love.graphics.rectangle("fill", game.debug_buttons.close.x, game.debug_buttons.close.y, game.debug_buttons.close.w, game.debug_buttons.close.h, 10, 10)

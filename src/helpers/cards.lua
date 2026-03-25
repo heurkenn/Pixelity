@@ -73,6 +73,23 @@ function cards.drawHandCard(card, x, y, selected, alpha)
     end
 end
 
+function cards.drawHiddenHandCard(x, y, selected, alpha)
+    alpha = alpha or 1
+    love.graphics.setColor(0.18, 0.2, 0.26, alpha)
+    love.graphics.rectangle("fill", x, y, constants.HAND_CARD_WIDTH, constants.HAND_CARD_HEIGHT, 12, 12)
+    love.graphics.setColor(0.35, 0.38, 0.45, alpha)
+    love.graphics.rectangle("line", x, y, constants.HAND_CARD_WIDTH, constants.HAND_CARD_HEIGHT, 12, 12)
+    love.graphics.setColor(1, 1, 1, alpha)
+    love.graphics.printf("???", x, y + 66, constants.HAND_CARD_WIDTH, "center")
+
+    if selected then
+        love.graphics.setColor(0.96, 0.72, 0.18, alpha)
+        love.graphics.setLineWidth(3)
+        love.graphics.rectangle("line", x - 2, y - 2, constants.HAND_CARD_WIDTH + 4, constants.HAND_CARD_HEIGHT + 4, 14, 14)
+        love.graphics.setLineWidth(1)
+    end
+end
+
 function cards.drawMayorCard(rect, mayorData, selected, portraitImage)
     love.graphics.setColor(0.94, 0.9, 0.8, 1)
     love.graphics.rectangle("fill", rect.x, rect.y, rect.w, rect.h, 12, 12)
@@ -150,6 +167,17 @@ function cards.drawSecondaryButton(rect, label)
     love.graphics.setColor(0.24, 0.26, 0.34, 1)
     love.graphics.rectangle("fill", rect.x, rect.y, rect.w, rect.h, 12, 12)
     love.graphics.setColor(1, 1, 1, 1)
+    love.graphics.printf(label, rect.x, rect.y + 14, rect.w, "center")
+end
+
+function cards.drawSecondaryButtonState(rect, label, disabled)
+    if disabled then
+        love.graphics.setColor(0.18, 0.18, 0.2, 0.85)
+    else
+        love.graphics.setColor(0.24, 0.26, 0.34, 1)
+    end
+    love.graphics.rectangle("fill", rect.x, rect.y, rect.w, rect.h, 12, 12)
+    love.graphics.setColor(disabled and 0.58 or 1, disabled and 0.58 or 1, disabled and 0.58 or 1, 1)
     love.graphics.printf(label, rect.x, rect.y + 14, rect.w, "center")
 end
 

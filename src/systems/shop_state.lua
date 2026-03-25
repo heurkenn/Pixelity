@@ -35,7 +35,19 @@ function shop_state.useExplosive(game, player, grid, x, y)
 
     local reward = love.math.random(effect.reward_min, effect.reward_max)
     player.addMoney(reward)
+
+    local loss = 0
+    if player.explosive_money_loss_chance > 0 and love.math.random() < player.explosive_money_loss_chance then
+        loss = math.floor(player.money * player.explosive_money_loss_fraction)
+        if loss > 0 then
+            player.money = math.max(0, player.money - loss)
+        end
+    end
+
     game.selected_item_index = nil
+    if loss > 0 then
+        return true, "Obstacle detruit: +" .. reward .. " pieces, mais -" .. loss .. " pieces."
+    end
     return true, "Obstacle detruit: +" .. reward .. " pieces."
 end
 
