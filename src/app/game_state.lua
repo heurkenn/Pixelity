@@ -3,6 +3,7 @@
 
 local game_state = {}
 
+-- Construit l'etat racine du jeu avec toutes les cles partagees entre scenes.
 function game_state.create()
     return {
         state = "splash",
@@ -39,6 +40,7 @@ function game_state.create()
         current_resolution_score = 0,
         highlight_cell = nil,
         current_score_popup = nil,
+        boss_effect = nil,
         selected_item_index = nil,
         scoring_speed = 1,
         options_open = false,
@@ -53,6 +55,7 @@ function game_state.create()
         confirm_toggle_button = nil,
         confirm_modal = nil,
         round_clear = nil,
+        victory_summary = nil,
         round_clear_buttons = nil,
         dragging = {
             active = false,

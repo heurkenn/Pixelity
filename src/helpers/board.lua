@@ -6,6 +6,7 @@ local fonts = require("src.helpers.fonts")
 
 local board = {}
 
+-- Dessine une case de grille pour un batiment, un obstacle ou une tuile cachee.
 function board.drawBuildingTile(buildings, grid, buildingId, posX, posY, alpha, cellX, cellY, hidden)
     alpha = alpha or 1
 

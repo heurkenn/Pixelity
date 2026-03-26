@@ -65,6 +65,7 @@ buildings.types = {
     }
 }
 
+-- Recupere les donnees d'un batiment a partir de son identifiant.
 function buildings.getData(id)
     for _, b in ipairs(buildings.types) do
         if b.id == id then
@@ -74,6 +75,7 @@ function buildings.getData(id)
     return nil
 end
 
+-- Charge les sprites de batiments disponibles dans les assets.
 function buildings.loadImages()
     for _, b in ipairs(buildings.types) do
         if love.filesystem.getInfo(b.sprite_path) then

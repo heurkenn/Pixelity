@@ -5,6 +5,7 @@ local shared = require("src.app.input_shared")
 
 local input_menu = {}
 
+-- Gere les clics du menu principal, de ses modales et du panneau debug.
 function input_menu.handleMenuClick(ctx, x, y)
     local game = ctx.game
     local layout = ctx.layout
@@ -87,6 +88,7 @@ function input_menu.handleMenuClick(ctx, x, y)
     return true
 end
 
+-- Gere les clics de l'ecran de selection du maire puis de la difficulte.
 function input_menu.handleSetupClick(ctx, x, y)
     local game = ctx.game
     local layout = ctx.layout

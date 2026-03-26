@@ -1,5 +1,6 @@
 -- conf.lua
 
+-- Configure l'identite LÖVE et les parametres de fenetre du jeu.
 function love.conf(t)
     t.identity = "pixelity"
     t.version = "11.5"

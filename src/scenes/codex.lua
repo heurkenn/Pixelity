@@ -5,6 +5,7 @@ local cards = require("src.helpers.cards")
 
 local codex = {}
 
+-- Dessine la modal du classeur avec maire, lois et revente.
 function codex.draw(game, player)
     if not game.codex_open then
         return

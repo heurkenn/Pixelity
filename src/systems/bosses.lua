@@ -5,6 +5,7 @@ local boss_catalog = require("src.data.boss")
 
 local bosses = {}
 
+-- Melange les identifiants de boss pour construire un ordre de run aleatoire.
 local function shuffleIds()
     local ids = {}
     for _, bossData in ipairs(boss_catalog.types) do
@@ -19,6 +20,7 @@ local function shuffleIds()
     return ids
 end
 
+-- Liste les cases de grille contenant encore un batiment destructible.
 local function collectDestroyableCells(grid)
     local cells = {}
     for y = 1, grid.getSize() do
@@ -32,10 +34,22 @@ local function collectDestroyableCells(grid)
     return cells
 end
 
+-- Trie une liste de cases par lecture visuelle pour une destruction propre.
+local function sortCells(cells)
+    table.sort(cells, function(a, b)
+        if a.y == b.y then
+            return a.x < b.x
+        end
+        return a.y < b.y
+    end)
+end
+
+-- Construit l'ordre aleatoire des boss d'une nouvelle run.
 function bosses.buildOrder()
     return shuffleIds()
 end
 
+-- Retourne le boss attribue a une manche boss donnee.
 function bosses.getBossForRound(game, roundNumber)
     if not game.boss_order then
         return nil
@@ -46,6 +60,7 @@ function bosses.getBossForRound(game, roundNumber)
     return boss_catalog.getData(bossId)
 end
 
+-- Ouvre l'intro de presentation d'un boss avant sa manche.
 function bosses.prepareBossIntro(game, bossData)
     game.current_boss = bossData
     game.state = "boss_intro"
@@ -57,6 +72,7 @@ function bosses.prepareBossIntro(game, bossData)
     }
 end
 
+-- Ajoute une explosion ponctuelle a l'intro de boss.
 local function spawnIntroExplosion(game, x, y, scale)
     local introState = game.boss_intro
     table.insert(introState.explosions, {
@@ -67,6 +83,7 @@ local function spawnIntroExplosion(game, x, y, scale)
     })
 end
 
+-- Met a jour l'intro visuelle d'un boss jusqu'au bouton continuer.
 function bosses.updateBossIntro(game, dt)
     if game.state ~= "boss_intro" or not game.boss_intro then
         return
@@ -99,6 +116,7 @@ function bosses.updateBossIntro(game, dt)
     end
 end
 
+-- Applique les effets de boss qui s'executent au debut d'une manche.
 function bosses.applyRoundStartEffects(bossData, grid)
     if not bossData then
         return
@@ -111,14 +129,18 @@ function bosses.applyRoundStartEffects(bossData, grid)
     end
 end
 
+-- Construit la sequence de destruction visuelle d'un boss sur BUILD.
 function bosses.applyBuildEffects(game, player, grid)
     local bossData = game.current_boss
     if not bossData then
         return nil
     end
 
-    local destroyedCount = 0
-    local label = nil
+    local result = {
+        steps = {},
+        markers = {},
+        label = bossData.name
+    }
 
     for _, effect in ipairs(bossData.effects or {}) do
         if effect.type == "destroy_random_cells_on_build" then
@@ -126,42 +148,67 @@ function bosses.applyBuildEffects(game, player, grid)
             for _ = 1, math.min(effect.count or 0, #cells) do
                 local pickIndex = love.math.random(1, #cells)
                 local picked = table.remove(cells, pickIndex)
-                grid.setCell(picked.x, picked.y, 0)
-                grid.setCellLevel(picked.x, picked.y, 0)
-                destroyedCount = destroyedCount + 1
+                table.insert(result.markers, {
+                    type = "cell",
+                    x = picked.x,
+                    y = picked.y,
+                    label = bossData.name
+                })
+                table.insert(result.steps, {
+                    x = picked.x,
+                    y = picked.y,
+                    label = bossData.name
+                })
             end
-            label = bossData.name .. ": -" .. destroyedCount .. " cases"
         elseif effect.type == "destroy_row_and_column_on_build" then
             local row = love.math.random(1, grid.getSize())
             local column = love.math.random(1, grid.getSize())
+            table.insert(result.markers, {
+                type = "row",
+                index = row,
+                label = bossData.name
+            })
+            table.insert(result.markers, {
+                type = "column",
+                index = column,
+                label = bossData.name
+            })
+            local seen = {}
+            local cells = {}
             for x = 1, grid.getSize() do
                 if grid.getCell(x, row) ~= 0 and grid.getCell(x, row) ~= grid.getObstacleId() then
-                    destroyedCount = destroyedCount + 1
+                    local key = x .. ":" .. row
+                    if not seen[key] then
+                        seen[key] = true
+                        table.insert(cells, { x = x, y = row })
+                    end
                 end
-                grid.setCell(x, row, 0)
-                grid.setCellLevel(x, row, 0)
             end
             for y = 1, grid.getSize() do
-                if y ~= row then
-                    if grid.getCell(column, y) ~= 0 and grid.getCell(column, y) ~= grid.getObstacleId() then
-                        destroyedCount = destroyedCount + 1
+                if grid.getCell(column, y) ~= 0 and grid.getCell(column, y) ~= grid.getObstacleId() then
+                    local key = column .. ":" .. y
+                    if not seen[key] then
+                        seen[key] = true
+                        table.insert(cells, { x = column, y = y })
                     end
-                    grid.setCell(column, y, 0)
-                    grid.setCellLevel(column, y, 0)
                 end
             end
-            label = bossData.name .. ": ligne " .. row .. ", colonne " .. column
+            sortCells(cells)
+            for _, cell in ipairs(cells) do
+                table.insert(result.steps, {
+                    x = cell.x,
+                    y = cell.y,
+                    label = bossData.name
+                })
+            end
         end
     end
 
-    if label then
-        game.message = label
+    if #result.steps == 0 then
+        return nil
     end
 
-    return {
-        destroyed_cells = destroyedCount,
-        label = label
-    }
+    return result
 end
 
 return bosses

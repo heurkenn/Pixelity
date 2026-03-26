@@ -3,6 +3,7 @@
 
 local render = {}
 
+-- Route le rendu vers la scene appropriee selon l'etat courant du jeu.
 function render.draw(ctx)
     local game = ctx.game
     local player = ctx.player
@@ -36,6 +37,11 @@ function render.draw(ctx)
 
     if game.state == "gameover" then
         ui.drawGameOver(game, player)
+        return
+    end
+
+    if game.state == "victory" then
+        ui.drawVictory(game, player)
         return
     end
 

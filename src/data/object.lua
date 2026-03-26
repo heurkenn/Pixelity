@@ -15,6 +15,7 @@ object.types = {
     }
 }
 
+-- Recupere les donnees d'un objet a partir de son identifiant.
 function object.getData(id)
     for _, item in ipairs(object.types) do
         if item.id == id then

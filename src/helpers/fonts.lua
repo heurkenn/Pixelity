@@ -8,12 +8,14 @@ local title_font = nil
 local intro_title_font = nil
 local score_font = nil
 
+-- Force un filtrage net adapte au rendu pixel art.
 local function setFontFilter(font)
     if font and font.setFilter then
         font:setFilter("nearest", "nearest")
     end
 end
 
+-- Charge toutes les polices utilisees par l'interface.
 function fonts.load()
     if love.filesystem.getInfo("assets/ThaleahFat.ttf") then
         title_font = love.graphics.newFont("assets/ThaleahFat.ttf", 60)
@@ -33,28 +35,34 @@ function fonts.load()
     end
 end
 
+-- Applique la police de texte par defaut a l'UI courante.
 function fonts.applyDefault()
     if text_font then
         love.graphics.setFont(text_font)
     end
 end
 
+-- Retourne la police de texte standard.
 function fonts.getTextFont()
     return text_font
 end
 
+-- Retourne la police de titre principale.
 function fonts.getTitleFont()
     return title_font
 end
 
+-- Retourne la police de grand titre utilisee par l'intro.
 function fonts.getIntroTitleFont()
     return intro_title_font or title_font
 end
 
+-- Retourne la police reservee aux gros chiffres.
 function fonts.getScoreFont()
     return score_font
 end
 
+-- Execute un dessin temporaire avec une police donnee puis restaure la precedente.
 local function withFont(font, drawFn)
     local previousFont = love.graphics.getFont()
     if font then
@@ -64,6 +72,7 @@ local function withFont(font, drawFn)
     love.graphics.setFont(previousFont)
 end
 
+-- Dessine un texte avec contour noir pour rester lisible en pixel art.
 function fonts.drawOutlinedText(text, x, y, options)
     options = options or {}
     local font = options.font

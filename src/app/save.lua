@@ -11,6 +11,7 @@ local mayor_effects = require("src.systems.mayor_effects")
 local save = {}
 local SAVE_PATH = "savegame.lua"
 
+-- Retourne l'objet difficulte complet a partir de son identifiant.
 local function getDifficultyById(id)
     for _, difficulty in ipairs(constants.DIFFICULTIES) do
         if difficulty.id == id then
@@ -20,6 +21,7 @@ local function getDifficultyById(id)
     return constants.DIFFICULTIES[1]
 end
 
+-- Serialize une valeur Lua simple en texte sauvegardable.
 local function serialize(value)
     local valueType = type(value)
     if valueType == "number" or valueType == "boolean" then
@@ -45,6 +47,7 @@ local function serialize(value)
     return "nil"
 end
 
+-- Transforme une liste de cartes en simple liste d'identifiants.
 local function cloneIdList(cards)
     local ids = {}
     for _, entry in ipairs(cards or {}) do
@@ -53,6 +56,7 @@ local function cloneIdList(cards)
     return ids
 end
 
+-- Reconstitue les cartes temporaires posees pour les remettre en main en sauvegarde.
 local function clonePendingToHandIds(game)
     local ids = {}
     for _, placement in ipairs(game.pending_placements or {}) do
@@ -61,6 +65,7 @@ local function clonePendingToHandIds(game)
     return ids
 end
 
+-- Rehydrate une liste de cartes depuis leurs identifiants sauvegardes.
 local function restoreCardsFromIds(target, ids)
     for _, id in ipairs(ids or {}) do
         local buildingData = buildings.getData(id)
@@ -70,6 +75,7 @@ local function restoreCardsFromIds(target, ids)
     end
 end
 
+-- Rehydrate une liste de donnees catalogue depuis des identifiants sauvegardes.
 local function restoreDataList(catalog, ids)
     local list = {}
     for _, id in ipairs(ids or {}) do
@@ -81,14 +87,17 @@ local function restoreDataList(catalog, ids)
     return list
 end
 
+-- Indique si une sauvegarde de run existe sur disque.
 function save.exists()
     return love.filesystem.getInfo(SAVE_PATH) ~= nil
 end
 
+-- Met a jour le flag de presence de sauvegarde dans l'etat du jeu.
 function save.refreshFlag(game)
     game.has_save = save.exists()
 end
 
+-- Supprime la sauvegarde de run et nettoie les traces runtime associees.
 function save.clear(game)
     if save.exists() then
         love.filesystem.remove(SAVE_PATH)
@@ -101,6 +110,7 @@ function save.clear(game)
     end
 end
 
+-- Sauvegarde l'etat persistant necessaire pour reprendre une run.
 function save.saveRun(game, player, grid)
     if game.state ~= "playing" and game.state ~= "round_clear" then
         return false, "Aucune partie active a sauvegarder."
@@ -159,6 +169,7 @@ function save.saveRun(game, player, grid)
     return false, "Echec de sauvegarde."
 end
 
+-- Charge une sauvegarde de run et reconstruit l'etat jouable correspondant.
 function save.loadRun(game, player, grid)
     if not save.exists() then
         return false, "Aucune sauvegarde."
@@ -238,6 +249,7 @@ function save.loadRun(game, player, grid)
     game.resolution_timer = 0
     game.highlight_cell = nil
     game.current_score_popup = nil
+    game.boss_effect = nil
     game.dealing_timer = 0
     game.shop_hidden_entries = payload.game.shop_hidden_entries or {}
     game.shop_offers = payload.game.shop_offers or nil

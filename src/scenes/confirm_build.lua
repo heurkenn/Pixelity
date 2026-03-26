@@ -3,6 +3,7 @@
 
 local confirm_build = {}
 
+-- Dessine la confirmation pour un BUILD sans nouveau placement.
 function confirm_build.draw(game)
     if not game.confirm_empty_build_open then
         return

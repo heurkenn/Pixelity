@@ -3,6 +3,7 @@
 
 local mayor_effects = {}
 
+-- Applique au joueur tous les effets persistants fournis par son maire.
 function mayor_effects.applyPersistentEffects(player)
     player.MAX_LAWS = 5
     player.MAX_ITEMS = 2

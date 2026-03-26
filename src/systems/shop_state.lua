@@ -3,6 +3,7 @@
 
 local shop_state = {}
 
+-- Utilise un explosif sur un obstacle et applique ses gains ou risques.
 function shop_state.useExplosive(game, player, grid, x, y)
     if not grid.isObstacle(x, y) then
         return false, "Aucun obstacle ici."

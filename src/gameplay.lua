@@ -10,10 +10,12 @@ local buildings = require("src.data.buildings")
 
 local gameplay = {}
 
+-- Retourne les donnees de difficulte selectionnees dans la run courante.
 function gameplay.getDifficulty(game)
     return round_flow.getDifficulty(game.selected_difficulty_id)
 end
 
+-- Recherche un placement temporaire sur une case de grille donnee.
 function gameplay.getPendingPlacementAt(game, x, y)
     for index, placement in ipairs(game.pending_placements) do
         if placement.x == x and placement.y == y then
@@ -23,6 +25,7 @@ function gameplay.getPendingPlacementAt(game, x, y)
     return nil, nil
 end
 
+-- Verifie si une case est libre pour y poser une carte.
 function gameplay.canPlaceAt(game, grid, x, y)
     if not grid.isInside(x, y) or not grid.isFree(x, y) then
         return false
@@ -30,6 +33,7 @@ function gameplay.canPlaceAt(game, grid, x, y)
     return gameplay.getPendingPlacementAt(game, x, y) == nil
 end
 
+-- Compte un type de batiment deja construit ou en attente de construction.
 function gameplay.countPlacedOrCommitted(game, grid, buildingId)
     local count = 0
     local cells = grid.getCells()
@@ -51,34 +55,42 @@ function gameplay.countPlacedOrCommitted(game, grid, buildingId)
     return count
 end
 
+-- Met a jour le message d'etat lie a la main et au deck.
 function gameplay.updateHandStatusMessage(game, player, prefix)
     round_flow.updateHandStatusMessage(game, player, prefix)
 end
 
+-- Initialise les donnees d'une nouvelle manche.
 function gameplay.beginRound(game, player)
     round_flow.beginRound(game, player)
 end
 
+-- Lance une nouvelle partie complete depuis le setup.
 function gameplay.startGame(game, player, grid)
     round_flow.startGame(game, player, grid)
 end
 
+-- Construit un etat de debug correspondant a un scenario donne.
 function gameplay.startDebugScenario(game, player, grid, scenarioId)
     debug_scenarios.start(game, player, grid, round_flow.startGame, scenarioId)
 end
 
+-- Termine la run sur un echec de manche.
 function gameplay.endRoundFailure(game)
     round_flow.endRoundFailure(game)
 end
 
+-- Ouvre la sequence de fin de manche reussie.
 function gameplay.endRoundSuccess(game, player)
     round_flow.endRoundSuccess(game, player)
 end
 
+-- Termine la resolution d'un BUILD et applique la suite du flow.
 function gameplay.finishResolution(game, player)
     round_flow.finishResolution(game, player)
 end
 
+-- Valide un BUILD si les preconditions de pose sont remplies.
 function gameplay.finalizeBuild(game, player, grid, scoreModule)
     if #game.pending_placements == 0 and not gameplay.hasCommittedBuildings(grid) then
         game.message = "Place au moins une carte avant BUILD."
@@ -88,42 +100,52 @@ function gameplay.finalizeBuild(game, player, grid, scoreModule)
     round_flow.finalizeBuild(game, player, grid, scoreModule)
 end
 
+-- Fait avancer la resolution du score case par case.
 function gameplay.updateResolution(game, player, dt)
     resolution.updateResolution(game, player, round_flow.finishResolution, dt)
 end
 
+-- Met a jour les ecrans inter-manche.
 function gameplay.updateRoundClear(game, player, dt)
     resolution.updateRoundClear(game, player, dt)
 end
 
+-- Met a jour l'intro visuelle d'un boss avant la manche.
 function gameplay.updateBossIntro(game, dt)
     bosses.updateBossIntro(game, dt)
 end
 
+-- Ouvre le resume de manche une fois le decompte termine.
 function gameplay.openRoundSummary(game)
     round_flow.openRoundSummary(game)
 end
 
+-- Ouvre le shop inter-manche avec ses offres courantes.
 function gameplay.openShop(game, player)
     round_flow.openShop(game, player)
 end
 
+-- Utilise un explosif sur une case d'obstacle.
 function gameplay.useExplosive(game, player, grid, x, y)
     return shop_state.useExplosive(game, player, grid, x, y)
 end
 
+-- Applique l'effet de BUILD du boss courant.
 function gameplay.applyBossBuildEffects(game, player, grid)
     return bosses.applyBuildEffects(game, player, grid)
 end
 
+-- Passe a la manche suivante apres le shop.
 function gameplay.startNextRound(game, player, grid)
     round_flow.startNextRound(game, player, grid)
 end
 
+-- Demarre effectivement une manche boss apres son intro.
 function gameplay.startBossRound(game, player, grid)
     round_flow.startBossRound(game, player, grid)
 end
 
+-- Indique si la grille contient deja au moins un batiment construit.
 function gameplay.hasCommittedBuildings(grid)
     local cells = grid.getCells()
 
@@ -138,6 +160,7 @@ function gameplay.hasCommittedBuildings(grid)
     return false
 end
 
+-- Tente de poser une carte de main sur une case cible.
 function gameplay.placeCardFromHand(game, player, grid, handIndex, x, y)
     if #game.pending_placements >= 4 then
         game.message = "Maximum 4 cartes avant BUILD."
@@ -184,6 +207,7 @@ function gameplay.placeCardFromHand(game, player, grid, handIndex, x, y)
     return true
 end
 
+-- Tente de poser la carte actuellement selectionnee sur une case.
 function gameplay.tryPlaceSelectedCard(game, player, grid, x, y)
     if not game.selected_hand_index then
         return false
@@ -196,6 +220,7 @@ function gameplay.tryPlaceSelectedCard(game, player, grid, x, y)
     return placed
 end
 
+-- Retire un placement temporaire et remet la carte dans la main.
 function gameplay.removePendingPlacement(game, player, index)
     local placement = table.remove(game.pending_placements, index)
     if placement then

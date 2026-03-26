@@ -6,6 +6,7 @@ local fonts = require("src.helpers.fonts")
 local boss_intro = {}
 local FRAME_DURATION = 0.1
 
+-- Dessine le popup d'annonce d'un boss avant sa manche.
 function boss_intro.draw(game)
     if game.state ~= "boss_intro" or not game.current_boss or not game.boss_intro then
         return

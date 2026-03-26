@@ -3,6 +3,7 @@
 
 local game_over = {}
 
+-- Dessine l'ecran de defaite de la run.
 function game_over.draw(game, player)
     love.graphics.setColor(1, 1, 1)
     love.graphics.printf("Game Over", 0, 180, love.graphics.getWidth(), "center")

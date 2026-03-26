@@ -3,6 +3,7 @@
 
 local debug_menu = {}
 
+-- Retourne le texte a afficher pour chaque bouton du menu debug.
 local function getLabel(buttonId)
     if buttonId == "play" then
         return "Lancer une partie test"
@@ -10,6 +11,8 @@ local function getLabel(buttonId)
         return "Apercu resume de manche"
     elseif buttonId == "shop" then
         return "Apercu direct du shop"
+    elseif buttonId == "victory" then
+        return "Ecran de victoire"
     elseif buttonId == "options" then
         return "Popup options"
     elseif buttonId == "codex" then
@@ -32,6 +35,7 @@ local function getLabel(buttonId)
     return buttonId
 end
 
+-- Dessine le panneau debug et sa liste scrollable de scenarios de test.
 function debug_menu.draw(game)
     if not game.debug_open then
         return

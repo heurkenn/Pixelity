@@ -3,6 +3,7 @@
 
 local input_round_clear = {}
 
+-- Gere les clics sur les ecrans de fin de manche, shop inclus.
 function input_round_clear.handleClick(ctx, x, y)
     local game = ctx.game
     local layout = ctx.layout

@@ -20,6 +20,7 @@ local BUILDING_NAMES = {
     [5] = "tower"
 }
 
+-- Compte les voisins par type autour d'une case de grille.
 local function getAdjacencyCounts(x, y)
     local counts = {
         houses = 0,
@@ -46,6 +47,7 @@ local function getAdjacencyCounts(x, y)
     return counts
 end
 
+-- Calcule combien de segments d'une taille donnee existent dans une suite.
 local function countSegmentsInRun(runLength, segmentSize)
     if runLength < segmentSize then
         return 0
@@ -53,6 +55,7 @@ local function countSegmentsInRun(runLength, segmentSize)
     return runLength - segmentSize + 1
 end
 
+-- Parcourt une ligne ou colonne et retourne les suites contigues de maisons.
 local function collectLineRuns(getCellValue)
     local runs = {}
     local runLength = 0
@@ -76,6 +79,7 @@ local function collectLineRuns(getCellValue)
     return runs
 end
 
+-- Ajoute les bonus de lois en fin de calcul de grille.
 local function applyLawBonuses(resolution, laws)
     local total = 0
     local size = grid.getSize()
@@ -119,6 +123,7 @@ local function applyLawBonuses(resolution, laws)
     return total
 end
 
+-- Applique les bonus globaux de maire qui se lisent sur tout le plateau.
 local function applyMayorBoardBonuses(player, resolution)
     local total = 0
     local size = grid.getSize()
@@ -152,6 +157,7 @@ local function applyMayorBoardBonuses(player, resolution)
     return total
 end
 
+-- Cumule les modificateurs de maire lies a une source ou une cible precise.
 local function getMayorModifier(mayorEffects, modifierType, source, target)
     local total = 0
     for _, effect in ipairs(mayorEffects or {}) do
@@ -164,6 +170,7 @@ local function getMayorModifier(mayorEffects, modifierType, source, target)
     return total
 end
 
+-- Multiplie la valeur d'un Immeuble selon son niveau de pile.
 local function applyBuildingLevel(source, x, y, value)
     if source ~= "tower" then
         return value
@@ -178,6 +185,7 @@ local function applyBuildingLevel(source, x, y, value)
     return value * (2 ^ (level - 1))
 end
 
+-- Applique la regle speciale de Leaf Enjoyer sur les parks.
 local function applyLeafEnjoyerRule(mayorEffects, source, adjacencyCounts, value)
     if source ~= "park" then
         return value
@@ -203,6 +211,7 @@ local function applyLeafEnjoyerRule(mayorEffects, source, adjacencyCounts, value
     return value
 end
 
+-- Force une valeur fixe a certains batiments quand un boss l'impose.
 local function applyBossOverrides(currentBoss, source, value)
     if not currentBoss then
         return value
@@ -217,6 +226,7 @@ local function applyBossOverrides(currentBoss, source, value)
     return value
 end
 
+-- Retourne la valeur finale d'un batiment place sur une case.
 function score.getBuildingValue(buildingId, x, y, adjacencyCounts, mayorEffects, currentBoss)
     local building = buildings.getData(buildingId)
     if not building then
@@ -244,6 +254,7 @@ function score.getBuildingValue(buildingId, x, y, adjacencyCounts, mayorEffects,
     return value
 end
 
+-- Calcule le score total de la grille et la file de resolution visuelle.
 function score.calculateBoard(player)
     local mayorEffects = player and player.mayor and player.mayor.effects or {}
     local resolution = {}

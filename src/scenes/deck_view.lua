@@ -6,6 +6,7 @@ local cards = require("src.helpers.cards")
 
 local deck_view = {}
 
+-- Dessine la vue detaillee de la main, du deck et de la defausse.
 function deck_view.draw(game, player)
     if not game.deck_view_open then
         return

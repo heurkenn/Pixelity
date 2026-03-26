@@ -7,6 +7,7 @@ local debug_menu = require("src.scenes.debug_menu")
 
 local menu = {}
 
+-- Dessine le menu principal et ses actions disponibles.
 function menu.draw(game)
     fonts.drawOutlinedText("Pixelity", 0, 112, {
         font = fonts.getTitleFont(),

@@ -10,6 +10,7 @@ local shop = require("src.shop")
 
 local round_flow = {}
 
+-- Retourne la difficulte complete a partir de son identifiant.
 function round_flow.getDifficulty(selectedDifficultyId)
     for _, item in ipairs(constants.DIFFICULTIES) do
         if item.id == selectedDifficultyId then
@@ -19,6 +20,7 @@ function round_flow.getDifficulty(selectedDifficultyId)
     return constants.DIFFICULTIES[1]
 end
 
+-- Met a jour le message de pioche ou de deck vide pour la manche.
 function round_flow.updateHandStatusMessage(game, player, prefix)
     if player.deck_empty and #player.deck == 0 then
         game.message = (prefix or "") .. " Deck vide."
@@ -27,6 +29,7 @@ function round_flow.updateHandStatusMessage(game, player, prefix)
     end
 end
 
+-- Reinitialise les etats temporaires necessaires au debut d'une manche.
 function round_flow.beginRound(game, player)
     player.setScores(0, 0)
     player.startRound()
@@ -37,18 +40,21 @@ function round_flow.beginRound(game, player)
     game.current_resolution_score = 0
     game.highlight_cell = nil
     game.current_score_popup = nil
+    game.boss_effect = nil
     game.shop_hidden_entries = {}
     game.shop_offers = nil
     game.shop_seeded = false
     round_flow.updateHandStatusMessage(game, player, "Nouvelle manche: pioche.")
 end
 
+-- Passe proprement dans l'etat jouable d'une manche deja preparee.
 local function enterPreparedRound(game, player, grid)
     game.state = "playing"
     game.grid_ref = grid
     round_flow.beginRound(game, player)
 end
 
+-- Prepare la grille, le score cible et l'eventuel boss d'une manche.
 local function prepareRoundState(game, player, grid, roundNumber)
     grid.init(constants.GRID_SIZE)
     game.grid_ref = grid
@@ -72,6 +78,7 @@ local function prepareRoundState(game, player, grid, roundNumber)
     enterPreparedRound(game, player, grid)
 end
 
+-- Lance une run complete depuis un etat vierge.
 function round_flow.startGame(game, player, grid)
     player.reset()
     player.setMayor(game.selected_mayor_id)
@@ -90,11 +97,13 @@ function round_flow.startGame(game, player, grid)
     prepareRoundState(game, player, grid, 1)
 end
 
+-- Bascule la partie vers l'ecran de defaite.
 function round_flow.endRoundFailure(game)
     game.state = "gameover"
     game.message = "Objectif rate. Clique pour recommencer."
 end
 
+-- Ouvre la sequence de victoire de manche avec ses recompenses.
 function round_flow.endRoundSuccess(game, player)
     local gainedMoney = 3 + player.available_builds
     local bankReward = 0
@@ -136,6 +145,7 @@ function round_flow.endRoundSuccess(game, player)
     }
 end
 
+-- Termine une resolution et decide de la suite de la manche.
 function round_flow.finishResolution(game, player)
     game.resolving = false
     game.highlight_cell = nil
@@ -161,6 +171,7 @@ function round_flow.finishResolution(game, player)
     round_flow.updateHandStatusMessage(game, player, "BUILD resolu.")
 end
 
+-- Construit le resume textuel des batiments presents sur la grille.
 function round_flow.summarizeBoardBuildings(grid)
     local counts = {}
     local lines = {}
@@ -189,6 +200,7 @@ function round_flow.summarizeBoardBuildings(grid)
     return lines
 end
 
+-- Fige les placements d'un BUILD puis lance boss ou scoring.
 function round_flow.finalizeBuild(game, player, grid, scoreModule)
     if not player.consumeBuild() then
         game.message = "Plus de BUILD disponible cette manche."
@@ -207,33 +219,56 @@ function round_flow.finalizeBuild(game, player, grid, scoreModule)
     end
     player.commitPlacedCards(committedCards)
 
-    local bossOutcome = bosses.applyBuildEffects(game, player, grid)
-    if bossOutcome and bossOutcome.label then
-        game.highlight_cell = {
-            label = bossOutcome.label
-        }
-    end
-
-    local _, resolutionQueue = scoreModule.calculateBoard(player)
-    game.resolving = true
-    game.resolution_queue = resolutionQueue
-    game.resolution_index = 0
-    game.resolution_timer = 0
-    game.current_resolution_score = player.score
-    game.highlight_cell = nil
-    game.current_score_popup = nil
     game.pending_placements = {}
     game.selected_hand_index = nil
-    game.last_build_summary = round_flow.summarizeBoardBuildings(grid)
-    game.message = "Resolution du score en cours."
+    game.current_score_popup = nil
+
+    local function startScoreResolution()
+        local _, resolutionQueue = scoreModule.calculateBoard(player)
+        game.resolving = true
+        game.resolution_queue = resolutionQueue
+        game.resolution_index = 0
+        game.resolution_timer = 0
+        game.current_resolution_score = player.score
+        game.highlight_cell = nil
+        game.last_build_summary = round_flow.summarizeBoardBuildings(grid)
+        game.message = "Resolution du score en cours."
+    end
+
+    local bossOutcome = bosses.applyBuildEffects(game, player, grid)
+    if bossOutcome and bossOutcome.steps and #bossOutcome.steps > 0 then
+        game.resolving = false
+        game.resolution_queue = {}
+        game.resolution_index = 0
+        game.resolution_timer = 0
+        game.current_resolution_score = player.score
+        game.boss_effect = {
+            active = true,
+            label = bossOutcome.label,
+            markers = bossOutcome.markers or {},
+            steps = bossOutcome.steps,
+            index = 0,
+            timer = 0,
+            pre_delay = math.max(0.18, 0.42 / math.max(1, game.scoring_speed or 1)),
+            step_delay = math.max(0.06, 0.28 / math.max(1, game.scoring_speed or 1)),
+            on_complete = startScoreResolution
+        }
+        game.highlight_cell = nil
+        game.message = bossOutcome.label
+        return
+    end
+
+    startScoreResolution()
 end
 
+-- Ouvre le panneau resume une fois le decompte termine.
 function round_flow.openRoundSummary(game)
     if game.round_clear and game.round_clear.phase == "countdown_done" then
         game.round_clear.phase = "summary"
     end
 end
 
+-- Ouvre le shop et genere ses offres si besoin.
 function round_flow.openShop(game, player)
     if game.round_clear then
         if not game.shop_seeded then
@@ -244,15 +279,24 @@ function round_flow.openShop(game, player)
     end
 end
 
+-- Avance a la manche suivante ou ouvre la victoire finale de run.
 function round_flow.startNextRound(game, player, grid)
     if not game.round_clear then
         return
     end
 
     if game.round >= rounds.getFinalRound() then
-        game.state = "gameover"
+        local difficultyName = player.difficulty and player.difficulty.name or game.selected_difficulty_id
+        local unlockMessage = require("src.app.profile").finishRun(game, player, true)
+        game.state = "victory"
         game.round_clear = nil
-        game.message = "Run reussie. Clique pour revenir au menu."
+        game.victory_summary = {
+            mayor_name = player.mayor and player.mayor.name or "-",
+            difficulty_name = difficultyName or "-",
+            rounds_played = game.rounds_played or game.round,
+            unlock_message = unlockMessage
+        }
+        game.message = "Run reussie."
         return
     end
 
@@ -264,6 +308,7 @@ function round_flow.startNextRound(game, player, grid)
     prepareRoundState(game, player, grid, game.round)
 end
 
+-- Finalise l'intro boss et demarre la vraie manche.
 function round_flow.startBossRound(game, player, grid)
     if game.state ~= "boss_intro" then
         return

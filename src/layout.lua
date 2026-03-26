@@ -5,10 +5,12 @@ local constants = require("src.constants")
 local layout = {}
 
 -- Shared hit-test helper for cards, buttons and modals.
+-- Teste si un point ecran se trouve a l'interieur d'un rectangle.
 function layout.pointInRect(px, py, rect)
     return px >= rect.x and px <= rect.x + rect.w and py >= rect.y and py <= rect.y + rect.h
 end
 
+-- Cree un rectangle interieur avec marges horizontales et verticales.
 function layout.insetRect(rect, paddingX, paddingY)
     paddingY = paddingY or paddingX
     return {
@@ -19,6 +21,7 @@ function layout.insetRect(rect, paddingX, paddingY)
     }
 end
 
+-- Centre un rectangle de taille fixe a l'interieur d'un autre.
 function layout.centerRectInRect(outerRect, width, height)
     return {
         x = outerRect.x + ((outerRect.w - width) / 2),
@@ -28,6 +31,7 @@ function layout.centerRectInRect(outerRect, width, height)
     }
 end
 
+-- Retourne un rectangle relatif a la taille actuelle de la fenetre.
 function layout.getScreenRect(widthRatio, heightRatio, yRatio)
     local width = love.graphics.getWidth() * widthRatio
     local height = love.graphics.getHeight() * heightRatio
@@ -39,6 +43,7 @@ function layout.getScreenRect(widthRatio, heightRatio, yRatio)
     }
 end
 
+-- Repartit des rectangles sur une seule ligne centree dans une zone.
 function layout.distributeRowInRect(outerRect, itemCount, itemWidth, itemHeight, gap)
     local rects = {}
     if itemCount <= 0 then
@@ -61,6 +66,7 @@ function layout.distributeRowInRect(outerRect, itemCount, itemWidth, itemHeight,
     return rects
 end
 
+-- Repartit des rectangles sur une grille reguliere dans une zone.
 function layout.distributeGridInRect(outerRect, itemCount, columns, itemHeight, gapX, gapY)
     local rects = {}
     if itemCount <= 0 then
@@ -87,19 +93,23 @@ function layout.distributeGridInRect(outerRect, itemCount, columns, itemHeight, 
 end
 
 -- Grid stays centered horizontally while keeping a fixed top margin for the HUD.
+-- Retourne l'origine ecran de la grille de jeu.
 function layout.getGridOffset()
     return (love.graphics.getWidth() - (constants.GRID_SIZE * constants.TILE_SIZE)) / 2, 140
 end
 
+-- Convertit des coordonnees grille en coordonnees ecran.
 function layout.getCellScreenPosition(x, y)
     local offsetX, offsetY = layout.getGridOffset()
     return offsetX + (x - 1) * constants.TILE_SIZE, offsetY + (y - 1) * constants.TILE_SIZE
 end
 
+-- Retourne l'ancre ecran utilisee par l'affichage du score courant.
 function layout.getScoreAnchor()
-    return love.graphics.getWidth() / 2, 52
+    return 80, 88
 end
 
+-- Convertit un clic ecran en coordonnees de grille si la case existe.
 function layout.getCellFromScreen(x, y, grid)
     local offsetX, offsetY = layout.getGridOffset()
     local gridX = math.floor((x - offsetX) / constants.TILE_SIZE) + 1
@@ -113,6 +123,7 @@ function layout.getCellFromScreen(x, y, grid)
 end
 
 -- Hand cards are laid out from the bottom center so resizing stays predictable.
+-- Retourne le rectangle d'une carte de main selon son index.
 function layout.getCardRect(index, handCount)
     local count = math.max(handCount, 1)
     local totalWidth = (count * constants.HAND_CARD_WIDTH) + ((count - 1) * constants.HAND_GAP)
@@ -125,6 +136,7 @@ function layout.getCardRect(index, handCount)
         constants.HAND_CARD_HEIGHT
 end
 
+-- Detecte quelle carte de main se trouve sous le pointeur.
 function layout.getCardIndexAt(x, y, handCount)
     for index = handCount, 1, -1 do
         local cardX, cardY, cardW, cardH = layout.getCardRect(index, handCount)
@@ -137,6 +149,7 @@ function layout.getCardIndexAt(x, y, handCount)
 end
 
 -- All interactive rectangles are recalculated every frame from the current window size.
+-- Recalcule tous les rectangles interactifs et modales de l'interface.
 function layout.updateButtons(game, mayorTypes, difficulties, scoringSpeedOptions)
     local width = love.graphics.getWidth()
     local height = love.graphics.getHeight()
@@ -424,6 +437,7 @@ function layout.updateButtons(game, mayorTypes, difficulties, scoringSpeedOption
             { id = "play" },
             { id = "summary" },
             { id = "shop" },
+            { id = "victory" },
             { id = "options" },
             { id = "codex" },
             { id = "deck" },

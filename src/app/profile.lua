@@ -28,6 +28,7 @@ local DEFAULT_DATA = {
 
 local data = nil
 
+-- Copie profondement une table de donnees simple.
 local function deepCopy(source)
     local copy = {}
     for key, value in pairs(source) do
@@ -40,6 +41,7 @@ local function deepCopy(source)
     return copy
 end
 
+-- Serialize une table de profil pour l'ecriture sur disque.
 local function serialize(value)
     if type(value) == "number" or type(value) == "boolean" then
         return tostring(value)
@@ -64,6 +66,7 @@ local function serialize(value)
     return "nil"
 end
 
+-- Ajoute les valeurs par defaut manquantes a une sauvegarde de profil existante.
 local function ensureDefaults(target, defaults)
     for key, value in pairs(defaults) do
         if type(value) == "table" then
@@ -75,6 +78,7 @@ local function ensureDefaults(target, defaults)
     end
 end
 
+-- Charge le profil meta depuis le disque ou les valeurs par defaut.
 function profile.load()
     data = deepCopy(DEFAULT_DATA)
 
@@ -96,6 +100,7 @@ function profile.load()
     return data
 end
 
+-- Ecrit le profil meta courant sur disque.
 function profile.save()
     if not data then
         profile.load()
@@ -103,6 +108,7 @@ function profile.save()
     love.filesystem.write(PROFILE_PATH, "return " .. serialize(data))
 end
 
+-- Retourne les donnees meta actuellement chargees.
 function profile.getData()
     if not data then
         return profile.load()
@@ -110,20 +116,24 @@ function profile.getData()
     return data
 end
 
+-- Indique si un maire est debloque dans la meta progression.
 function profile.isMayorUnlocked(mayorId)
     return profile.getData().unlocks.mayors[mayorId] == true
 end
 
+-- Indique si une difficulte est debloquee dans la meta progression.
 function profile.isDifficultyUnlocked(difficultyId)
     return profile.getData().unlocks.difficulties[difficultyId] == true
 end
 
+-- Incremente le compteur global de runs demarrees.
 function profile.recordRunStarted()
     local profileData = profile.getData()
     profileData.stats.games_started = profileData.stats.games_started + 1
     profile.save()
 end
 
+-- Incremente la statistique globale de batiments poses.
 function profile.recordBuildingsPlaced(count)
     if count <= 0 then
         return
@@ -133,6 +143,7 @@ function profile.recordBuildingsPlaced(count)
     profile.save()
 end
 
+-- Incremente la statistique globale de pieces depensees.
 function profile.recordMoneySpent(amount)
     if amount <= 0 then
         return
@@ -142,6 +153,7 @@ function profile.recordMoneySpent(amount)
     profile.save()
 end
 
+-- Incremente la statistique globale d'obstacles detruits.
 function profile.recordObstacleDestroyed(count)
     count = count or 1
     if count <= 0 then
@@ -152,6 +164,7 @@ function profile.recordObstacleDestroyed(count)
     profile.save()
 end
 
+-- Met a jour le meilleur score global si le score donne est superieur.
 function profile.updateBestScore(score)
     local profileData = profile.getData()
     if score > (profileData.stats.best_global_score or 0) then
@@ -160,29 +173,38 @@ function profile.updateBestScore(score)
     end
 end
 
+-- Termine une run en mettant a jour stats et debloquages meta.
 function profile.finishRun(game, player, won)
     if game.run_recorded then
-        return
+        return nil
     end
 
     local profileData = profile.getData()
     local mayorId = game.selected_mayor_id or (player.mayor and player.mayor.id) or 1
     local difficultyId = game.selected_difficulty_id or (player.difficulty and player.difficulty.id) or "easy"
-
-    profileData.unlocks.mayors[mayorId + 1] = true
-    if difficultyId == "easy" then
-        profileData.unlocks.difficulties.normal = true
-    elseif difficultyId == "normal" then
-        profileData.unlocks.difficulties.hard = true
-    end
+    local unlockMessages = {}
 
     if won then
         profileData.stats.games_won = profileData.stats.games_won + 1
+
+        if profileData.unlocks.mayors[mayorId + 1] ~= true then
+            profileData.unlocks.mayors[mayorId + 1] = true
+            table.insert(unlockMessages, "Nouveau maire debloque")
+        end
+
+        if difficultyId == "easy" and profileData.unlocks.difficulties.normal ~= true then
+            profileData.unlocks.difficulties.normal = true
+            table.insert(unlockMessages, "Difficulte Normal debloquee")
+        elseif difficultyId == "normal" and profileData.unlocks.difficulties.hard ~= true then
+            profileData.unlocks.difficulties.hard = true
+            table.insert(unlockMessages, "Difficulte Difficile debloquee")
+        end
     end
 
     profile.updateBestScore(player.total_score or 0)
     game.run_recorded = true
     profile.save()
+    return #unlockMessages > 0 and table.concat(unlockMessages, " / ") or nil
 end
 
 return profile

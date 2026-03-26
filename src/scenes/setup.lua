@@ -7,6 +7,7 @@ local mayor = require("src.data.mayor")
 
 local setup = {}
 
+-- Retourne un maire fictif masque quand un vrai maire est verrouille.
 local function getLockedMayor(index)
     local previousMayor = mayor.types[index - 1]
     local previousName = previousMayor and previousMayor.name or "le maire precedent"
@@ -18,6 +19,7 @@ local function getLockedMayor(index)
     }
 end
 
+-- Dessine l'ecran de selection du maire puis de la difficulte.
 function setup.draw(game, getMayorById, profile)
     fonts.drawOutlinedText("Pixelity", 0, 40, {
         font = fonts.getTitleFont(),

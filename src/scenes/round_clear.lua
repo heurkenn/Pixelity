@@ -6,6 +6,7 @@ local cards = require("src.helpers.cards")
 
 local round_clear = {}
 
+-- Retourne l'etat visuel d'une offre de shop pour le joueur courant.
 local function getShopCardState(player, entry)
     local price = entry.display_price or entry.price
 
@@ -36,6 +37,7 @@ local function getShopCardState(player, entry)
     return "enabled"
 end
 
+-- Dessine les differentes phases de fin de manche et le shop.
 function round_clear.draw(game, player)
     local clear = game.round_clear
     if not clear then

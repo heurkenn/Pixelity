@@ -5,6 +5,7 @@ local intro = require("src.scenes.intro")
 
 local update = {}
 
+-- Route la mise a jour frame par frame vers l'etat actif du jeu.
 function update.run(ctx, dt)
     local game = ctx.game
     local navigation = ctx.navigation

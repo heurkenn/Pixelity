@@ -33,6 +33,7 @@ law.types = {
     }
 }
 
+-- Recupere les donnees d'une loi a partir de son identifiant.
 function law.getData(id)
     for _, item in ipairs(law.types) do
         if item.id == id then

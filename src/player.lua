@@ -9,6 +9,7 @@ local DEFAULT_REDRAWS = 2
 local DEFAULT_MAX_LAWS = 5
 local DEFAULT_MAX_ITEMS = 2
 
+-- Vide une table mutable sans en changer la reference.
 local function clearTable(target)
     for key in pairs(target) do
         target[key] = nil
@@ -43,6 +44,7 @@ player.hand_size = DEFAULT_HAND_SIZE
 player.hand_can_redraw = true
 player.deck_empty = false
 
+-- Assigne au joueur les donnees du maire choisi.
 function player.setMayor(mayorID)
     local mayorData = require("src.data.mayor").getData(mayorID)
     if mayorData then
@@ -50,10 +52,12 @@ function player.setMayor(mayorID)
     end
 end
 
+-- Assigne la difficulte active de la run.
 function player.setDifficulty(difficulty)
     player.difficulty = difficulty
 end
 
+-- Reinitialise completement l'etat du joueur pour une nouvelle run.
 function player.reset()
     player.score = 0
     player.round_score = 0
@@ -83,6 +87,7 @@ function player.reset()
     player.deck_empty = false
 end
 
+-- Reconstruit le deck de depart a partir de la base et des achats permanents.
 function player.initDeck()
     clearTable(player.deck)
     clearTable(player.hand)
@@ -110,6 +115,7 @@ function player.initDeck()
     end
 end
 
+-- Pioche aleatoirement jusqu'a remplir la main du joueur.
 function player.drawHand()
     player.deck_empty = false
 
@@ -124,6 +130,7 @@ function player.drawHand()
     end
 end
 
+-- Demarre une nouvelle manche avec pioche et reset des actions.
 function player.startRound()
     player.available_builds = DEFAULT_BUILD_ACTIONS
     player.available_redraws = DEFAULT_REDRAWS
@@ -135,11 +142,13 @@ function player.startRound()
     player.hand_can_redraw = #player.hand > 0
 end
 
+-- Recomplete la main apres un BUILD.
 function player.refillHandAfterBuild()
     player.drawHand()
     player.hand_can_redraw = #player.hand > 0
 end
 
+-- Retire une carte precise de la main.
 function player.removeCardFromHand(index)
     if index >= 1 and index <= #player.hand then
         return table.remove(player.hand, index)
@@ -147,24 +156,28 @@ function player.removeCardFromHand(index)
     return nil
 end
 
+-- Remet une carte dans la main du joueur.
 function player.returnCardToHand(card)
     if card then
         table.insert(player.hand, card)
     end
 end
 
+-- Envoie les cartes construites dans la defausse.
 function player.commitPlacedCards(cards)
     for _, card in ipairs(cards) do
         table.insert(player.discard, card)
     end
 end
 
+-- Ajoute une carte arbitraire a la defausse.
 function player.addCardToDiscard(card)
     if card then
         table.insert(player.discard, card)
     end
 end
 
+-- Defausse toute la main et en pioche une nouvelle.
 function player.redrawHand()
     if player.available_redraws <= 0 or not player.hand_can_redraw or #player.hand == 0 then
         return false
@@ -181,6 +194,7 @@ function player.redrawHand()
     return true
 end
 
+-- Consomme une action BUILD si elle est encore disponible.
 function player.consumeBuild()
     if player.available_builds <= 0 then
         return false
@@ -190,19 +204,23 @@ function player.consumeBuild()
     return true
 end
 
+-- Met a jour le score courant et le score de manche.
 function player.setScores(totalScore, roundScore)
     player.score = totalScore
     player.round_score = roundScore
 end
 
+-- Met a jour le score global transfere en fin de manche.
 function player.setTotalScore(totalScore)
     player.total_score = totalScore
 end
 
+-- Ajoute des pieces au joueur.
 function player.addMoney(amount)
     player.money = player.money + amount
 end
 
+-- Depense des pieces si le joueur en a assez.
 function player.spendMoney(amount)
     if player.money < amount then
         return false
@@ -212,6 +230,7 @@ function player.spendMoney(amount)
     return true
 end
 
+-- Indique si une loi donnee est deja possedee.
 function player.hasLaw(lawId)
     for _, law in ipairs(player.laws) do
         if law.id == lawId then
@@ -221,6 +240,7 @@ function player.hasLaw(lawId)
     return false
 end
 
+-- Compte le nombre d'exemplaires d'une loi possedes.
 function player.countLawCopies(lawId)
     local count = 0
     for _, law in ipairs(player.laws) do
@@ -231,10 +251,12 @@ function player.countLawCopies(lawId)
     return count
 end
 
+-- Ajoute une loi a la collection du joueur.
 function player.addLaw(law)
     table.insert(player.laws, law)
 end
 
+-- Retire une loi de la collection a un index donne.
 function player.removeLaw(index)
     if index >= 1 and index <= #player.laws then
         return table.remove(player.laws, index)
@@ -242,14 +264,17 @@ function player.removeLaw(index)
     return nil
 end
 
+-- Ajoute un batiment achete a la liste persistante du deck.
 function player.addOwnedBuilding(buildingId)
     table.insert(player.owned_buildings, buildingId)
 end
 
+-- Ajoute un objet a l'inventaire du joueur.
 function player.addItem(item)
     table.insert(player.items, item)
 end
 
+-- Consomme un objet de l'inventaire a un index donne.
 function player.consumeItem(index)
     if index >= 1 and index <= #player.items then
         return table.remove(player.items, index)

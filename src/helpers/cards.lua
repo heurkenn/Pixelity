@@ -6,6 +6,7 @@ local fonts = require("src.helpers.fonts")
 
 local cards = {}
 
+-- Dessine une carte d'inventaire compacte pour les objets pendant la partie.
 function cards.drawInventoryCard(rect, title, subtitle, selected)
     love.graphics.setColor(selected and 0.84 or 0.22, selected and 0.62 or 0.26, selected and 0.28 or 0.32)
     love.graphics.rectangle("fill", rect.x, rect.y, rect.w, rect.h, 10, 10)
@@ -16,6 +17,7 @@ function cards.drawInventoryCard(rect, title, subtitle, selected)
     end
 end
 
+-- Dessine une carte d'offre du shop avec son prix et son etat.
 function cards.drawShopEntryCard(rect, title, description, price, state)
     if state == "owned" then
         love.graphics.setColor(0.24, 0.34, 0.22)
@@ -32,6 +34,7 @@ function cards.drawShopEntryCard(rect, title, description, price, state)
     love.graphics.printf(price .. "p", rect.x + 8, rect.y + rect.h - 26, rect.w - 16, "center")
 end
 
+-- Dessine une mini-carte utilitaire pour les listes et apercus.
 function cards.drawMiniCard(rect, title, subtitle, alpha, highlight)
     alpha = alpha or 1
     love.graphics.setColor(0.94, 0.9, 0.8, alpha)
@@ -51,6 +54,7 @@ function cards.drawMiniCard(rect, title, subtitle, alpha, highlight)
     end
 end
 
+-- Dessine une carte de main complete avec son contenu visible.
 function cards.drawHandCard(card, x, y, selected, alpha)
     alpha = alpha or 1
     love.graphics.setColor(0.94, 0.9, 0.8, alpha)
@@ -73,6 +77,7 @@ function cards.drawHandCard(card, x, y, selected, alpha)
     end
 end
 
+-- Dessine une carte de main cachee pour les effets de boss.
 function cards.drawHiddenHandCard(x, y, selected, alpha)
     alpha = alpha or 1
     love.graphics.setColor(0.18, 0.2, 0.26, alpha)
@@ -90,6 +95,7 @@ function cards.drawHiddenHandCard(x, y, selected, alpha)
     end
 end
 
+-- Dessine la grande carte de maire visible dans le setup.
 function cards.drawMayorCard(rect, mayorData, selected, portraitImage)
     love.graphics.setColor(0.94, 0.9, 0.8, 1)
     love.graphics.rectangle("fill", rect.x, rect.y, rect.w, rect.h, 12, 12)
@@ -133,6 +139,7 @@ function cards.drawMayorCard(rect, mayorData, selected, portraitImage)
     end
 end
 
+-- Dessine un bouton fleche gauche ou droite pour la navigation.
 function cards.drawArrowButton(rect, direction)
     love.graphics.setColor(0.24, 0.28, 0.36, 1)
     love.graphics.rectangle("fill", rect.x, rect.y, rect.w, rect.h, 12, 12)
@@ -156,6 +163,7 @@ function cards.drawArrowButton(rect, direction)
     end
 end
 
+-- Dessine un bouton principal d'action.
 function cards.drawPrimaryButton(rect, label)
     love.graphics.setColor(0.18, 0.48, 0.32, 1)
     love.graphics.rectangle("fill", rect.x, rect.y, rect.w, rect.h, 14, 14)
@@ -163,6 +171,7 @@ function cards.drawPrimaryButton(rect, label)
     love.graphics.printf(label, rect.x, rect.y + 20, rect.w, "center")
 end
 
+-- Dessine un bouton secondaire standard.
 function cards.drawSecondaryButton(rect, label)
     love.graphics.setColor(0.24, 0.26, 0.34, 1)
     love.graphics.rectangle("fill", rect.x, rect.y, rect.w, rect.h, 12, 12)
@@ -170,6 +179,7 @@ function cards.drawSecondaryButton(rect, label)
     love.graphics.printf(label, rect.x, rect.y + 14, rect.w, "center")
 end
 
+-- Dessine un bouton secondaire en tenant compte d'un etat desactive.
 function cards.drawSecondaryButtonState(rect, label, disabled)
     if disabled then
         love.graphics.setColor(0.18, 0.18, 0.2, 0.85)

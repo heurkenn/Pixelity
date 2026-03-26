@@ -8,6 +8,7 @@ local layout = require("src.layout")
 
 local shop = {}
 
+-- Copie superficiellement une table de donnees pour l'adapter au rendu UI.
 local function cloneTable(source)
     local copy = {}
     for key, value in pairs(source) do
@@ -16,6 +17,7 @@ local function cloneTable(source)
     return copy
 end
 
+-- Construit une entree de shop avec ses coordonnees cliquables.
 local function buildButton(item, section, x, y, w, h)
     local button = cloneTable(item)
     button.section = section
@@ -26,6 +28,7 @@ local function buildButton(item, section, x, y, w, h)
     return button
 end
 
+-- Verifie si une valeur est deja presente dans une liste.
 local function hasValue(list, value)
     for _, item in ipairs(list or {}) do
         if item == value then
@@ -35,6 +38,7 @@ local function hasValue(list, value)
     return false
 end
 
+-- Tire un sous-ensemble aleatoire d'identifiants sans doublon.
 local function takeRandomIds(sourceIds, amount, excludedIds)
     local pool = {}
     local picked = {}
@@ -53,16 +57,19 @@ local function takeRandomIds(sourceIds, amount, excludedIds)
     return picked
 end
 
+-- Calcule le prix reel d'un objet selon les modificateurs du maire.
 local function getItemPrice(player, itemData)
     -- Some mayors alter only shop object prices, not the base object data itself.
     local multiplier = player and player.object_price_multiplier or 1
     return math.floor((itemData.price or 0) * multiplier)
 end
 
+-- Indique si une offre a ete retiree du shop courant.
 local function isHidden(game, section, id)
     return game.shop_hidden_entries and game.shop_hidden_entries[section .. ":" .. tostring(id)] == true
 end
 
+-- Liste les lois encore autorisees pour le joueur et ce shop.
 local function collectAvailableLawIds(game, player)
     local ids = {}
     for _, lawData in ipairs(law.types) do
@@ -75,6 +82,7 @@ local function collectAvailableLawIds(game, player)
     return ids
 end
 
+-- Liste les batiments shop-only encore disponibles dans l'offre courante.
 local function collectAvailableBuildingIds(game)
     local ids = {}
     for _, building in ipairs(buildings.types) do
@@ -85,6 +93,7 @@ local function collectAvailableBuildingIds(game)
     return ids
 end
 
+-- Liste les objets encore disponibles selon le stock et les limites du joueur.
 local function collectAvailableItemIds(game, player)
     local ids = {}
     if player.MAX_ITEMS <= 0 then
@@ -98,6 +107,7 @@ local function collectAvailableItemIds(game, player)
     return ids
 end
 
+-- Retourne le prix a afficher pour une entree du shop.
 function shop.getDisplayPrice(player, entry)
     if entry.section == "item" then
         return getItemPrice(player, entry)
@@ -105,11 +115,13 @@ function shop.getDisplayPrice(player, entry)
     return entry.price
 end
 
+-- Marque une offre comme retiree du shop courant.
 function shop.hideEntry(game, section, id)
     game.shop_hidden_entries = game.shop_hidden_entries or {}
     game.shop_hidden_entries[section .. ":" .. tostring(id)] = true
 end
 
+-- Genere un nouveau lot complet d'offres aleatoires pour le shop.
 function shop.rollOffers(game, player)
     game.shop_offers = {
         laws = takeRandomIds(collectAvailableLawIds(game, player), 3),
@@ -118,6 +130,7 @@ function shop.rollOffers(game, player)
     }
 end
 
+-- Nettoie et complete les offres actuelles pour garder un shop coherent.
 function shop.prepareOffers(game, player)
     game.shop_offers = game.shop_offers or {
         laws = {},
@@ -170,6 +183,7 @@ function shop.prepareOffers(game, player)
     end
 end
 
+-- Reroll toutes les offres du shop contre un cout fixe en pieces.
 function shop.refreshOffers(game, player)
     local price = 5
     if not player.spendMoney(price) then
@@ -181,6 +195,7 @@ function shop.refreshOffers(game, player)
     return true, "Shop rafraichi pour 5 pieces."
 end
 
+-- Calcule les zones et cartes cliquables du shop pour le rendu courant.
 function shop.updateLayout(game, player)
     local panelW = 760
     local panelX = (love.graphics.getWidth() - panelW) / 2
@@ -270,6 +285,7 @@ function shop.updateLayout(game, player)
     )
 end
 
+-- Achete un batiment et l'ajoute au deck permanent du joueur.
 function shop.buyBuilding(player, buildingId)
     local building = buildings.getData(buildingId)
     if not building then
@@ -283,6 +299,7 @@ function shop.buyBuilding(player, buildingId)
     return true, building.name .. " ajoute au deck."
 end
 
+-- Achete une loi en respectant les limites et les doublons autorises.
 function shop.buyLaw(player, lawId)
     local targetLaw = law.getData(lawId)
     if not targetLaw then
@@ -306,6 +323,7 @@ function shop.buyLaw(player, lawId)
     return true, targetLaw.name .. " achetee."
 end
 
+-- Achete un objet et l'ajoute a l'inventaire du joueur.
 function shop.buyItem(player, itemId)
     local targetItem = object.getData(itemId)
     if not targetItem then
@@ -324,6 +342,7 @@ function shop.buyItem(player, itemId)
     return true, targetItem.name .. " ajoute a l'inventaire."
 end
 
+-- Vend une loi depuis le classeur pour la moitie de son prix.
 function shop.sellLaw(player, index)
     local lawToSell = player.laws[index]
     if not lawToSell then

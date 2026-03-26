@@ -11,6 +11,7 @@ local CENTER_BURST_INTERVAL = 0.08
 local MAX_RANDOM_EXPLOSIONS = 18
 local FADE_OUT_DURATION = 0.35
 
+-- Tente de charger une image en toute securite et avec filtrage pixel.
 local function tryLoadImage(path)
     if not love.filesystem.getInfo(path) then
         return nil
@@ -25,6 +26,7 @@ local function tryLoadImage(path)
     return image
 end
 
+-- Charge toutes les frames d'explosion utilisees par l'intro.
 local function loadExplosionFrames()
     local frames = {}
     if not love.filesystem.getInfo("assets/explosions") then
@@ -45,6 +47,7 @@ local function loadExplosionFrames()
     return frames
 end
 
+-- Initialise l'etat de l'intro et ses assets au demarrage du jeu.
 function intro.load(game)
     game.intro = {
         timer = 0,
@@ -59,6 +62,7 @@ function intro.load(game)
     }
 end
 
+-- Reinitialise l'etat temporel de l'intro pour un nouveau passage.
 function intro.reset(game)
     game.intro = game.intro or {}
     game.intro.timer = 0
@@ -72,6 +76,7 @@ function intro.reset(game)
     game.intro.center_pattern_index = 0
 end
 
+-- Ajoute une explosion ponctuelle a l'etat visuel de l'intro.
 local function spawnExplosion(state, x, y, scale)
     table.insert(state.explosions, {
         x = x,
@@ -82,6 +87,7 @@ local function spawnExplosion(state, x, y, scale)
     })
 end
 
+-- Fait apparaitre une explosion aleatoire hors de la zone du logo.
 local function spawnRandomScreenExplosion(state)
     local margin = 40
     local screenW = love.graphics.getWidth()
@@ -101,6 +107,7 @@ local function spawnRandomScreenExplosion(state)
     end
 end
 
+-- Declenche un motif d'explosions centre sur le logo de l'intro.
 local function spawnCenterBurst(state)
     local centerX = love.graphics.getWidth() / 2
     local centerY = love.graphics.getHeight() * 0.34 + 46
@@ -130,6 +137,7 @@ local function spawnCenterBurst(state)
     end
 end
 
+-- Met a jour les phases et les explosions de l'intro principale.
 function intro.update(game, dt)
     local state = game.intro
     if not state then
@@ -173,12 +181,14 @@ function intro.update(game, dt)
     end
 end
 
+-- Indique si l'intro est terminee et peut laisser place au menu.
 function intro.isFinished(game)
     return game.intro
         and game.intro.timer >= game.intro.duration
         and #game.intro.explosions == 0
 end
 
+-- Dessine l'intro complete avec logo, tag et explosions.
 function intro.draw(game)
     local screenW = love.graphics.getWidth()
     local screenH = love.graphics.getHeight()

@@ -3,12 +3,14 @@
 
 local stats_scene = {}
 
+-- Dessine une ligne cle/valeur dans la fenetre de statistiques.
 local function drawLine(label, value, x, y, w)
     love.graphics.setColor(1, 1, 1)
     love.graphics.printf(label, x, y, w * 0.62, "left")
     love.graphics.printf(tostring(value), x + (w * 0.62), y, w * 0.38, "right")
 end
 
+-- Dessine la modal des statistiques globales du profil.
 function stats_scene.draw(game, profile)
     if not game.stats_open then
         return

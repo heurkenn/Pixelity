@@ -3,6 +3,7 @@
 
 local options = {}
 
+-- Dessine la modal d'options accessible depuis le menu ou la partie.
 function options.draw(game)
     if not game.options_open then
         return

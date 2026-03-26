@@ -9,6 +9,7 @@ local board = require("src.helpers.board")
 
 local play = {}
 
+-- Indique si la main doit etre cachee par le boss courant.
 local function shouldHideHand(player)
     for _, effect in ipairs(player.current_boss and player.current_boss.effects or {}) do
         if effect.type == "hide_hand_cards" then
@@ -18,10 +19,12 @@ local function shouldHideHand(player)
     return false
 end
 
+-- Indique si les tuiles posees doivent aussi etre masquees sur la grille.
 local function shouldHideBoard(game)
     return shouldHideHand({ current_boss = game.current_boss })
 end
 
+-- Dessine la grille, ses batiments, les placements temporaires et les alertes boss.
 function play.drawGrid(game, grid, buildings, getPendingPlacementAt)
     local cells = grid.getCells()
     local offsetX, offsetY = layout.getGridOffset()
@@ -55,8 +58,42 @@ function play.drawGrid(game, grid, buildings, getPendingPlacementAt)
             end
         end
     end
+
+    if game.boss_effect and game.boss_effect.markers then
+        for _, marker in ipairs(game.boss_effect.markers) do
+            if marker.type == "cell" then
+                local cellX, cellY = layout.getCellScreenPosition(marker.x, marker.y)
+                love.graphics.setColor(0.95, 0.22, 0.16, 0.92)
+                love.graphics.rectangle("fill", cellX + 8, cellY + 8, constants.TILE_SIZE - 16, constants.TILE_SIZE - 16, 8, 8)
+                fonts.drawOutlinedText("!", cellX, cellY + 6, {
+                    font = fonts.getScoreFont(),
+                    mode = "printf",
+                    limit = constants.TILE_SIZE,
+                    align = "center",
+                    outline = 1
+                })
+            elseif marker.type == "row" then
+                local _, rowY = layout.getCellScreenPosition(1, marker.index)
+                love.graphics.setColor(0.9, 0.3, 0.2, 0.9)
+                love.graphics.rectangle("fill", offsetX - 36, rowY + 10, 24, constants.TILE_SIZE - 20, 6, 6)
+                fonts.drawOutlinedText("!", offsetX - 34, rowY + 8, {
+                    font = fonts.getScoreFont(),
+                    outline = 1
+                })
+            elseif marker.type == "column" then
+                local columnX = offsetX + ((marker.index - 1) * constants.TILE_SIZE)
+                love.graphics.setColor(0.9, 0.3, 0.2, 0.9)
+                love.graphics.rectangle("fill", columnX + 10, offsetY - 34, constants.TILE_SIZE - 20, 24, 6, 6)
+                fonts.drawOutlinedText("!", columnX + 18, offsetY - 42, {
+                    font = fonts.getScoreFont(),
+                    outline = 1
+                })
+            end
+        end
+    end
 end
 
+-- Dessine la main visible ou cachee selon le boss courant.
 function play.drawHand(game, player)
     local hidden = shouldHideHand(player)
 
@@ -106,6 +143,7 @@ function play.drawHand(game, player)
     end
 end
 
+-- Dessine l'animation de popup qui transporte les points vers le score.
 function play.drawScorePopup(game)
     if not game.current_score_popup then
         return
@@ -124,33 +162,41 @@ function play.drawScorePopup(game)
     love.graphics.print("+" .. popup.points, currentX, currentY)
 end
 
+-- Dessine le HUD principal pendant la manche.
 function play.drawHUD(game, player)
-    local scoreX, scoreY = layout.getScoreAnchor()
+    local scoreX, scoreY = 18, 94
     local scoreText = tostring(game.current_resolution_score)
-    local scoreFont = fonts.getScoreFont() or love.graphics.getFont()
-    local scoreWidth = scoreFont:getWidth(scoreText)
+    local titleText = game.current_boss and game.current_boss.name or ("Manche " .. tostring(game.round))
 
     love.graphics.setColor(1, 1, 1)
-    love.graphics.printf("Objectif: " .. game.target_score, 0, 24, love.graphics.getWidth(), "center")
+    love.graphics.printf(titleText, 0, 18, love.graphics.getWidth(), "center")
+    if game.current_boss then
+        love.graphics.printf("Manche " .. tostring(game.round), 0, 42, love.graphics.getWidth(), "center")
+    end
 
-    love.graphics.setColor(0.22, 0.26, 0.3)
-    love.graphics.rectangle("fill", 18, 18, 120, 56, 12, 12)
-    fonts.drawOutlinedText(tostring(player.money), 18, 24, {
+    love.graphics.setColor(1, 1, 1)
+    love.graphics.print("Objectif", 20, 18)
+    fonts.drawOutlinedText(tostring(game.target_score), 18, 28, {
         font = fonts.getScoreFont(),
         mode = "printf",
-        limit = 120,
-        align = "center",
+        limit = 124,
+        align = "left",
         outline = 1
     })
 
-    fonts.drawOutlinedText(scoreText, math.floor(scoreX - (scoreWidth / 2)), math.floor(scoreY), {
+    love.graphics.setColor(1, 1, 1)
+    love.graphics.print("Score", 20, 84)
+    fonts.drawOutlinedText(scoreText, math.floor(scoreX - 2), math.floor(scoreY), {
         font = fonts.getScoreFont(),
+        mode = "printf",
+        limit = 124,
+        align = "left",
         outline = 1
     })
 
     if game.current_score_popup then
         love.graphics.setColor(1, 0.9, 0.4)
-        love.graphics.print("+" .. game.current_score_popup.points, scoreX + (scoreWidth / 2) + 18, scoreY + 10)
+        love.graphics.print("+" .. game.current_score_popup.points, scoreX + 78, scoreY + 10)
     end
 
     love.graphics.setColor(0.24, 0.26, 0.34)
@@ -168,7 +214,7 @@ function play.drawHUD(game, player)
     love.graphics.setColor(1, 1, 1)
     love.graphics.printf("REDRAW MAIN", game.redraw_button.x, game.redraw_button.y + 16, game.redraw_button.w, "center")
 
-    if game.highlight_cell and game.highlight_cell.x and game.highlight_cell.y then
+    if game.highlight_cell and game.highlight_cell.x and game.highlight_cell.y and game.highlight_cell.points then
         local cellX, cellY = layout.getCellScreenPosition(game.highlight_cell.x, game.highlight_cell.y)
         love.graphics.setColor(1, 0.95, 0.6)
         love.graphics.print("+" .. game.highlight_cell.points, cellX + constants.TILE_SIZE + 6, cellY + 12)
@@ -199,6 +245,16 @@ function play.drawHUD(game, player)
         font = fonts.getScoreFont(),
         mode = "printf",
         limit = game.bottom_left_buttons.deck.w,
+        align = "center",
+        outline = 1
+    })
+
+    love.graphics.setColor(0.22, 0.26, 0.3)
+    love.graphics.rectangle("fill", game.bottom_left_buttons.deck.x + 106, game.bottom_left_buttons.deck.y, 120, game.bottom_left_buttons.deck.h, 12, 12)
+    fonts.drawOutlinedText(tostring(player.money), game.bottom_left_buttons.deck.x + 106, game.bottom_left_buttons.deck.y + 8, {
+        font = fonts.getScoreFont(),
+        mode = "printf",
+        limit = 120,
         align = "center",
         outline = 1
     })

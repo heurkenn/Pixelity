@@ -25,7 +25,7 @@ boss.types = {
         name = "Lactose Intelorant dog",
         description = "Park value are now -15 fixed.",
         effects = {
-            { type = "fixed_building_value", source = "park", value = -15 }
+            { type = "fixed_building_value", source = "park", value = -10 }
         }
     },
     {
@@ -39,13 +39,14 @@ boss.types = {
     {
         id = "renovation",
         name = "Renovation",
-        description = "15 obstacle spawn at the beginning of the round.",
+        description = "10 obstacle spawn at the beginning of the round.",
         effects = {
-            { type = "spawn_obstacles_on_round_start", count = 15 }
+            { type = "spawn_obstacles_on_round_start", count = 10 }
         }
     }
 }
 
+-- Recupere les donnees d'un boss a partir de son identifiant.
 function boss.getData(id)
     for _, bossData in ipairs(boss.types) do
         if bossData.id == id then

@@ -64,6 +64,7 @@ mayor.types = {
     }
 }
 
+-- Recupere les donnees d'un maire a partir de son identifiant.
 function mayor.getData(id)
     for _, m in ipairs(mayor.types) do
         if m.id == id then

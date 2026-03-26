@@ -6,6 +6,7 @@ local input_menu = require("src.app.input_menu")
 local input_round_clear = require("src.app.input_round_clear")
 local input_play = require("src.app.input_play")
 
+-- Route les clics souris vers l'etat de jeu approprie.
 function input.mousepressed(ctx, x, y, button)
     local game = ctx.game
     local navigation = ctx.navigation
@@ -30,7 +31,14 @@ function input.mousepressed(ctx, x, y, button)
     end
 
     if game.state == "gameover" then
-        ctx.profile.finishRun(game, ctx.player, game.round >= require("src.data.rounds").getFinalRound())
+        ctx.profile.finishRun(game, ctx.player, false)
+        ctx.save.clear(game)
+        navigation.openMenu(game)
+        return
+    end
+
+    if game.state == "victory" then
+        ctx.profile.finishRun(game, ctx.player, true)
         ctx.save.clear(game)
         navigation.openMenu(game)
         return
@@ -51,10 +59,12 @@ function input.mousepressed(ctx, x, y, button)
     input_play.handleClick(ctx, x, y)
 end
 
+-- Route les relachements de souris, surtout pour le drag and drop des cartes.
 function input.mousereleased(ctx, x, y, button)
     input_play.handleRelease(ctx, x, y, button)
 end
 
+-- Route les touches clavier vers l'etat courant et gere les raccourcis globaux.
 function input.keypressed(ctx, key)
     local game = ctx.game
     local navigation = ctx.navigation
@@ -74,6 +84,7 @@ function input.keypressed(ctx, key)
     end
 end
 
+-- Gere le scroll souris pour les interfaces qui le supportent.
 function input.wheelmoved(ctx, _, y)
     local game = ctx.game
     if game.state ~= "menu" or not game.debug_open then

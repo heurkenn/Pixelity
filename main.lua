@@ -23,6 +23,7 @@ local save = require("src.app.save")
 local game = game_state.create()
 local app_context = nil
 
+-- Recalcule tous les rectangles interactifs et le layout dynamique.
 local function updateButtons()
     layout.updateButtons(game, mayor.types, constants.DIFFICULTIES, constants.SCORING_SPEED_OPTIONS)
     if game.state == "round_clear" and game.round_clear and game.round_clear.phase == "shop" then
@@ -30,6 +31,7 @@ local function updateButtons()
     end
 end
 
+-- Charge les assets partages, l'etat global et le contexte applicatif.
 function love.load()
     love.graphics.setDefaultFilter("nearest", "nearest")
     buildings.loadImages()
@@ -64,27 +66,33 @@ function love.load()
     updateButtons()
 end
 
+-- Met a jour le layout courant puis delegue la logique d'update.
 function love.update(dt)
     updateButtons()
     update.run(app_context, dt)
 end
 
+-- Delegue tout le rendu au routeur principal de scenes.
 function love.draw()
     render.draw(app_context)
 end
 
+-- Transmet les clics souris au routeur d'input applicatif.
 function love.mousepressed(x, y, button)
     input.mousepressed(app_context, x, y, button)
 end
 
+-- Transmet les relachements souris a la logique de drag and drop.
 function love.mousereleased(x, y, button)
     input.mousereleased(app_context, x, y, button)
 end
 
+-- Transmet les touches clavier aux etats concernes.
 function love.keypressed(key)
     input.keypressed(app_context, key)
 end
 
+-- Transmet la molette souris aux ecrans qui utilisent du scroll.
 function love.wheelmoved(x, y)
     input.wheelmoved(app_context, x, y)
 end
