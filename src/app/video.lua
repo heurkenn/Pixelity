@@ -6,6 +6,17 @@ local video = {}
 local WINDOWED_WIDTH = 1280
 local WINDOWED_HEIGHT = 720
 
+-- Applique un mode video a partir de son identifiant de preference.
+function video.applyMode(game, mode)
+    if mode == "fullscreen" then
+        video.setFullscreen(game)
+    elseif mode == "borderless" then
+        video.setBorderlessFullscreen(game)
+    else
+        video.setWindowed(game)
+    end
+end
+
 -- Applique le mode fenetre standard du jeu.
 function video.setWindowed(game)
     love.window.setMode(WINDOWED_WIDTH, WINDOWED_HEIGHT, {

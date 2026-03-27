@@ -1,15 +1,15 @@
 -- main.lua
 
-local grid = require("src.grid")
+local grid = require("src.game.grid")
 local buildings = require("src.data.buildings")
-local score = require("src.score")
-local player = require("src.player")
+local score = require("src.game.score")
+local player = require("src.game.player")
 local mayor = require("src.data.mayor")
 local constants = require("src.constants")
-local layout = require("src.layout")
-local ui = require("src.ui")
-local gameplay = require("src.gameplay")
-local shop = require("src.shop")
+local layout = require("src.ui.layout")
+local ui = require("src.ui.init")
+local gameplay = require("src.game.gameplay")
+local shop = require("src.game.shop")
 local game_state = require("src.app.game_state")
 local navigation = require("src.app.navigation")
 local input = require("src.app.input")
@@ -38,8 +38,10 @@ function love.load()
     buildings.loadImages()
     ui.loadAssets()
     ui.applyDefaultFont()
-    require("src.scenes.intro").load(game)
+    require("src.menus.intro").load(game)
     profile.load()
+    profile.applyPreferences(game)
+    video.applyMode(game, game.video_mode)
 
     for _, mayorData in ipairs(mayor.types) do
         if mayorData.portrait and love.filesystem.getInfo(mayorData.portrait) then
@@ -48,7 +50,7 @@ function love.load()
         end
     end
 
-    require("src.scenes.intro").reset(game)
+    require("src.menus.intro").reset(game)
     save.refreshFlag(game)
     app_context = {
         game = game,

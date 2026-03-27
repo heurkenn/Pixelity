@@ -13,13 +13,6 @@ Ce document donne un resume rapide du role de chaque fichier principal du projet
 ## src
 
 - [`src/constants.lua`](/home/kali/Pixelity/src/constants.lua) : constantes globales de gameplay et de layout.
-- [`src/gameplay.lua`](/home/kali/Pixelity/src/gameplay.lua) : facade de logique gameplay qui delegue aux systemes.
-- [`src/grid.lua`](/home/kali/Pixelity/src/grid.lua) : grille 5x5, acces aux cases et gestion des obstacles.
-- [`src/layout.lua`](/home/kali/Pixelity/src/layout.lua) : calcul des rectangles UI, boutons et zones cliquables.
-- [`src/player.lua`](/home/kali/Pixelity/src/player.lua) : etat du joueur, deck, main, lois, objets et economie.
-- [`src/score.lua`](/home/kali/Pixelity/src/score.lua) : calcul du score de grille, des lois et des bonus de maire.
-- [`src/shop.lua`](/home/kali/Pixelity/src/shop.lua) : offres du shop, layout des achats et logique d'achat/vente.
-- [`src/ui.lua`](/home/kali/Pixelity/src/ui.lua) : routeur de rendu vers les differentes scenes UI.
 
 ## src/data
 
@@ -27,6 +20,8 @@ Ce document donne un resume rapide du role de chaque fichier principal du projet
 - [`src/data/law.lua`](/home/kali/Pixelity/src/data/law.lua) : catalogue des lois et de leurs effets.
 - [`src/data/mayor.lua`](/home/kali/Pixelity/src/data/mayor.lua) : catalogue des maires, portraits et effets.
 - [`src/data/object.lua`](/home/kali/Pixelity/src/data/object.lua) : catalogue des objets utilisables.
+- [`src/data/boss.lua`](/home/kali/Pixelity/src/data/boss.lua) : catalogue des boss et de leurs effets.
+- [`src/data/rounds.lua`](/home/kali/Pixelity/src/data/rounds.lua) : table des scores cibles et des manches boss.
 
 ## src/app
 
@@ -41,32 +36,54 @@ Ce document donne un resume rapide du role de chaque fichier principal du projet
 - [`src/app/render.lua`](/home/kali/Pixelity/src/app/render.lua) : routeur du rendu principal selon l'etat.
 - [`src/app/save.lua`](/home/kali/Pixelity/src/app/save.lua) : sauvegarde et chargement de l'etat persistant d'une run.
 - [`src/app/update.lua`](/home/kali/Pixelity/src/app/update.lua) : routeur de mise a jour principal selon l'etat.
+- [`src/app/video.lua`](/home/kali/Pixelity/src/app/video.lua) : gestion des modes fenetre, plein ecran et plein ecran fenetre.
 
-## src/helpers
+## src/game
 
-- [`src/helpers/board.lua`](/home/kali/Pixelity/src/helpers/board.lua) : aides de rendu pour la grille et ses cellules.
-- [`src/helpers/cards.lua`](/home/kali/Pixelity/src/helpers/cards.lua) : primitives de dessin pour cartes, fleches et boutons.
-- [`src/helpers/fonts.lua`](/home/kali/Pixelity/src/helpers/fonts.lua) : chargement des polices et texte outline.
+- [`src/game/gameplay.lua`](/home/kali/Pixelity/src/game/gameplay.lua) : facade de gameplay qui relie la grille, le score, la pioche et les systemes de manche.
+- [`src/game/grid.lua`](/home/kali/Pixelity/src/game/grid.lua) : grille 5x5, cases, obstacles et niveaux d'Immeuble.
+- [`src/game/play.lua`](/home/kali/Pixelity/src/game/play.lua) : rendu principal de la partie, HUD, main et effets visuels de gameplay.
+- [`src/game/player.lua`](/home/kali/Pixelity/src/game/player.lua) : etat du joueur, deck, main, lois, objets et economie.
+- [`src/game/score.lua`](/home/kali/Pixelity/src/game/score.lua) : calcul du score de grille, des lois et des bonus de maire.
+- [`src/game/shop.lua`](/home/kali/Pixelity/src/game/shop.lua) : logique du shop, offres, layout des achats et achat/vente.
 
-## src/scenes
+## src/game/systems
 
-- [`src/scenes/codex.lua`](/home/kali/Pixelity/src/scenes/codex.lua) : popup du classeur avec maire, lois et revente.
-- [`src/scenes/confirm_build.lua`](/home/kali/Pixelity/src/scenes/confirm_build.lua) : popup de confirmation du `BUILD` vide.
-- [`src/scenes/debug_menu.lua`](/home/kali/Pixelity/src/scenes/debug_menu.lua) : menu debug avec raccourcis de test.
-- [`src/scenes/deck_view.lua`](/home/kali/Pixelity/src/scenes/deck_view.lua) : popup de visualisation deck/main/defausse.
-- [`src/scenes/game_over.lua`](/home/kali/Pixelity/src/scenes/game_over.lua) : ecran de fin de partie.
-- [`src/scenes/intro.lua`](/home/kali/Pixelity/src/scenes/intro.lua) : intro complete avec titre, fade et explosions.
-- [`src/scenes/menu.lua`](/home/kali/Pixelity/src/scenes/menu.lua) : menu principal.
-- [`src/scenes/options.lua`](/home/kali/Pixelity/src/scenes/options.lua) : popup d'options.
-- [`src/scenes/play.lua`](/home/kali/Pixelity/src/scenes/play.lua) : rendu principal de la partie, HUD, main et grille.
-- [`src/scenes/round_clear.lua`](/home/kali/Pixelity/src/scenes/round_clear.lua) : banner, decompte, resume et shop inter-manche.
-- [`src/scenes/setup.lua`](/home/kali/Pixelity/src/scenes/setup.lua) : selection du maire puis de la difficulte.
-- [`src/scenes/stats.lua`](/home/kali/Pixelity/src/scenes/stats.lua) : popup des statistiques globales du profil.
+- [`src/game/systems/bosses.lua`](/home/kali/Pixelity/src/game/systems/bosses.lua) : ordre des boss, intros et effets de destruction pendant la manche.
+- [`src/game/systems/mayor_effects.lua`](/home/kali/Pixelity/src/game/systems/mayor_effects.lua) : application des effets persistants des maires.
+- [`src/game/systems/resolution.lua`](/home/kali/Pixelity/src/game/systems/resolution.lua) : resolution temporelle du score et des effets boss.
+- [`src/game/systems/round_flow.lua`](/home/kali/Pixelity/src/game/systems/round_flow.lua) : cycle de manche, succes/echec, reward et transition de run.
+- [`src/game/systems/shop_state.lua`](/home/kali/Pixelity/src/game/systems/shop_state.lua) : utilisation gameplay des objets comme l'explosif.
 
-## src/systems
+## src/menus
 
-- [`src/systems/debug_scenarios.lua`](/home/kali/Pixelity/src/systems/debug_scenarios.lua) : etats de test preconstruits.
-- [`src/systems/mayor_effects.lua`](/home/kali/Pixelity/src/systems/mayor_effects.lua) : application des effets persistants des maires.
-- [`src/systems/resolution.lua`](/home/kali/Pixelity/src/systems/resolution.lua) : resolution temporelle du score case par case.
-- [`src/systems/round_flow.lua`](/home/kali/Pixelity/src/systems/round_flow.lua) : cycle de manche, succes/echec et transitions.
-- [`src/systems/shop_state.lua`](/home/kali/Pixelity/src/systems/shop_state.lua) : usage des objets et etat gameplay lie au shop.
+- [`src/menus/game_over.lua`](/home/kali/Pixelity/src/menus/game_over.lua) : ecran de defaite.
+- [`src/menus/intro.lua`](/home/kali/Pixelity/src/menus/intro.lua) : intro de lancement avec explosions et fade.
+- [`src/menus/menu.lua`](/home/kali/Pixelity/src/menus/menu.lua) : menu principal.
+- [`src/menus/setup.lua`](/home/kali/Pixelity/src/menus/setup.lua) : selection du maire puis de la difficulte.
+- [`src/menus/stats.lua`](/home/kali/Pixelity/src/menus/stats.lua) : popup des statistiques globales du profil.
+- [`src/menus/victory.lua`](/home/kali/Pixelity/src/menus/victory.lua) : ecran de victoire de run.
+
+## src/overlays
+
+- [`src/overlays/boss_intro.lua`](/home/kali/Pixelity/src/overlays/boss_intro.lua) : popup d'introduction d'un boss avant sa manche.
+- [`src/overlays/codex.lua`](/home/kali/Pixelity/src/overlays/codex.lua) : popup du classeur avec maire, lois et revente.
+- [`src/overlays/confirm_build.lua`](/home/kali/Pixelity/src/overlays/confirm_build.lua) : popup de confirmation du `BUILD` vide.
+- [`src/overlays/deck_view.lua`](/home/kali/Pixelity/src/overlays/deck_view.lua) : popup de visualisation de la main, du deck et de la defausse.
+- [`src/overlays/options.lua`](/home/kali/Pixelity/src/overlays/options.lua) : popup d'options de partie et d'affichage.
+- [`src/overlays/round_clear.lua`](/home/kali/Pixelity/src/overlays/round_clear.lua) : banner, decompte, resume et shop inter-manche.
+
+## src/debug
+
+- [`src/debug/menu.lua`](/home/kali/Pixelity/src/debug/menu.lua) : panneau debug avec raccourcis de test.
+- [`src/debug/scenarios.lua`](/home/kali/Pixelity/src/debug/scenarios.lua) : etats de test preconstruits.
+
+## src/ui
+
+- [`src/ui/board.lua`](/home/kali/Pixelity/src/ui/board.lua) : aides de rendu pour la grille et ses cellules.
+- [`src/ui/cards.lua`](/home/kali/Pixelity/src/ui/cards.lua) : primitives de dessin pour cartes, fleches et boutons.
+- [`src/ui/fonts.lua`](/home/kali/Pixelity/src/ui/fonts.lua) : chargement des polices et texte outline.
+- [`src/ui/init.lua`](/home/kali/Pixelity/src/ui/init.lua) : routeur de rendu vers les differentes scenes et overlays.
+- [`src/ui/layout.lua`](/home/kali/Pixelity/src/ui/layout.lua) : calcul des rectangles UI, boutons et zones cliquables.
+- [`src/ui/theme.lua`](/home/kali/Pixelity/src/ui/theme.lua) : palette de couleurs partagee pour harmoniser l'interface.
+- [`src/ui/widgets.lua`](/home/kali/Pixelity/src/ui/widgets.lua) : widgets UI communs comme popups, boutons et cartes d'information.

@@ -6,6 +6,11 @@ local profile = {}
 local PROFILE_PATH = "profile.lua"
 
 local DEFAULT_DATA = {
+    preferences = {
+        scoring_speed = 1,
+        video_mode = "windowed",
+        confirm_empty_build_enabled = true
+    },
     unlocks = {
         mayors = {
             [1] = true
@@ -114,6 +119,43 @@ function profile.getData()
         return profile.load()
     end
     return data
+end
+
+-- Applique les preferences persistantes du profil a l'etat runtime du jeu.
+function profile.applyPreferences(game)
+    local profileData = profile.getData()
+    game.scoring_speed = profileData.preferences.scoring_speed or 1
+    game.video_mode = profileData.preferences.video_mode or "windowed"
+    game.confirm_empty_build_enabled = profileData.preferences.confirm_empty_build_enabled ~= false
+end
+
+-- Met a jour la vitesse de scoring par defaut dans les preferences.
+function profile.setScoringSpeed(multiplier)
+    local profileData = profile.getData()
+    profileData.preferences.scoring_speed = multiplier
+    profile.save()
+end
+
+-- Met a jour le mode video prefere.
+function profile.setVideoMode(mode)
+    local profileData = profile.getData()
+    profileData.preferences.video_mode = mode
+    profile.save()
+end
+
+-- Met a jour la confirmation de BUILD vide dans les preferences.
+function profile.setConfirmEmptyBuildEnabled(enabled)
+    local profileData = profile.getData()
+    profileData.preferences.confirm_empty_build_enabled = enabled == true
+    profile.save()
+end
+
+-- Remet a zero le profil meta et ses preferences persistantes.
+function profile.resetAll()
+    data = deepCopy(DEFAULT_DATA)
+    if love.filesystem.getInfo(PROFILE_PATH) then
+        love.filesystem.remove(PROFILE_PATH)
+    end
 end
 
 -- Indique si un maire est debloque dans la meta progression.

@@ -2,7 +2,7 @@
 
 ## 🛠️ PHASE 1 : Architecture & Fondations (TERMINÉ)
 - [x] Configurer `conf.lua` (1280x720).
-- [x] Créer le module `src/grid.lua` (Matrice 5x5).
+- [x] Créer le module `src/game/grid.lua` (Matrice 5x5).
 - [x] Créer le module `src/buildings.lua` (Data types & Sprites).
 - [x] Gérer l'affichage et les animations (Fumée).
 - [x] Fragmenter l'architecture UI/gameplay en helpers, scènes et systèmes.

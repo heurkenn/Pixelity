@@ -1,7 +1,7 @@
 -- src/app/update.lua
 -- State-based update router for the root application loop.
 
-local intro = require("src.scenes.intro")
+local intro = require("src.menus.intro")
 
 local update = {}
 

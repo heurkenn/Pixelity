@@ -22,6 +22,6 @@ L'objectif est d'atteindre des paliers de score pour débloquer de nouvelles zon
 
 ## 📂 Structure du Projet
 - `main.lua` : Gestion de la boucle de jeu et des états.
-- `src/grid.lua` : Logique de la grille (placement, détection de voisins).
+- `src/game/grid.lua` : Logique de la grille (placement, détection de voisins).
 - `src/buildings.lua` : Bibliothèque des types de bâtiments et leurs règles.
-- `src/ui.lua` : Affichage du score, de la main et des menus.
+- `src/ui/init.lua` : Affichage du score, de la main et des menus.

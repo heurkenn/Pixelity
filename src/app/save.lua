@@ -6,7 +6,7 @@ local boss_catalog = require("src.data.boss")
 local constants = require("src.constants")
 local law = require("src.data.law")
 local object = require("src.data.object")
-local mayor_effects = require("src.systems.mayor_effects")
+local mayor_effects = require("src.game.systems.mayor_effects")
 
 local save = {}
 local SAVE_PATH = "savegame.lua"
@@ -231,6 +231,7 @@ function save.loadRun(game, player, grid)
     game.round_clear = payload.game.round_clear
     game.boss_order = payload.game.boss_order or nil
     game.current_boss = payload.game.current_boss_id and boss_catalog.getData(payload.game.current_boss_id) or nil
+    player.current_boss = game.current_boss
     game.boss_intro = nil
     if game.state == "boss_intro" and game.current_boss then
         game.boss_intro = {
