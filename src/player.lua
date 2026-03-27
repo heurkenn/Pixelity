@@ -3,17 +3,38 @@
 local player = {}
 local buildings = require("src.data.buildings")
 
-local DEFAULT_HAND_SIZE = 5
+local DEFAULT_HAND_SIZE = 7
 local DEFAULT_BUILD_ACTIONS = 3
 local DEFAULT_REDRAWS = 2
 local DEFAULT_MAX_LAWS = 5
 local DEFAULT_MAX_ITEMS = 2
+local DEFAULT_MAX_PENDING_PLACEMENTS = 4
 
 -- Vide une table mutable sans en changer la reference.
 local function clearTable(target)
     for key in pairs(target) do
         target[key] = nil
     end
+end
+
+-- Additionne les bonus de poses en attente donnes par les lois possedees.
+local function getLawPendingPlacementBonus()
+    local total = 0
+
+    for _, ownedLaw in ipairs(player.laws) do
+        for _, effect in ipairs(ownedLaw.effects or {}) do
+            if effect.type == "extra_pending_placements" then
+                total = total + (effect.value or 0)
+            end
+        end
+    end
+
+    return total
+end
+
+-- Retourne le nombre maximal de cartes posables avant un BUILD.
+function player.getMaxPendingPlacements()
+    return DEFAULT_MAX_PENDING_PLACEMENTS + getLawPendingPlacementBonus()
 end
 
 player.score = 0
@@ -83,6 +104,7 @@ function player.reset()
     player.current_boss = nil
     player.available_builds = DEFAULT_BUILD_ACTIONS
     player.available_redraws = DEFAULT_REDRAWS
+    player.hand_size = DEFAULT_HAND_SIZE
     player.hand_can_redraw = true
     player.deck_empty = false
 end
@@ -95,15 +117,17 @@ function player.initDeck()
 
     for _, b in ipairs(buildings.types) do
         if b.name == "House" then
-            for _ = 1, 5 do
+            for _ = 1, 10 do
                 table.insert(player.deck, b)
             end
         elseif b.name == "Park" then
-            for _ = 1, 3 do
+            for _ = 1, 6 do
                 table.insert(player.deck, b)
             end
         elseif b.name == "Factory" then
-            table.insert(player.deck, b)
+            for _ = 1, 2 do
+                table.insert(player.deck, b)
+            end
         end
     end
 

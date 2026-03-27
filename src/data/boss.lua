@@ -7,7 +7,7 @@ boss.types = {
     {
         id = "earthquake",
         name = "Earthquake",
-        description = "An earthquake destroy 5 randoms cells each turn.",
+        description = "La ville tremble, les assurances aussi : 5 cases aleatoires sont frappees a chaque BUILD.",
         effects = {
             { type = "destroy_random_cells_on_build", count = 5 }
         }
@@ -15,7 +15,7 @@ boss.types = {
     {
         id = "tsunami",
         name = "Tsunami",
-        description = "One row and one column a destroy each turn.",
+        description = "Un peu d'eau, beaucoup de problemes : une ligne et une colonne sont detruites a chaque BUILD.",
         effects = {
             { type = "destroy_row_and_column_on_build" }
         }
@@ -23,7 +23,7 @@ boss.types = {
     {
         id = "lactose_dog",
         name = "Lactose Intelorant dog",
-        description = "Park value are now -15 fixed.",
+        description = "Il renifle tout le quartier : les Park valent maintenant -10 fixes.",
         effects = {
             { type = "fixed_building_value", source = "park", value = -10 }
         }
@@ -31,7 +31,7 @@ boss.types = {
     {
         id = "in_the_dark",
         name = "In the dark",
-        description = "The buildings on the card are hidden.",
+        description = "Quelqu'un a coupe le courant : les cartes en main restent cachees.",
         effects = {
             { type = "hide_hand_cards" }
         }
@@ -39,7 +39,7 @@ boss.types = {
     {
         id = "renovation",
         name = "Renovation",
-        description = "10 obstacle spawn at the beginning of the round.",
+        description = "Le chantier municipal a encore oublie de prevenir : 10 obstacles apparaissent au debut de la manche.",
         effects = {
             { type = "spawn_obstacles_on_round_start", count = 10 }
         }

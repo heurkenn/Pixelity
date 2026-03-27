@@ -26,6 +26,16 @@ function options.draw(game)
         love.graphics.printf("x" .. speedButton.multiplier, speedButton.x, speedButton.y + 8, speedButton.w, "center")
     end
 
+    love.graphics.setColor(1, 1, 1)
+    love.graphics.printf("Affichage", modal.panel.x, modal.panel.y + 172, modal.panel.w, "center")
+    for _, videoButton in ipairs(game.video_mode_buttons or {}) do
+        local selected = game.video_mode == videoButton.id
+        love.graphics.setColor(selected and 0.82 or 0.24, selected and 0.64 or 0.3, selected and 0.26 or 0.36)
+        love.graphics.rectangle("fill", videoButton.x, videoButton.y, videoButton.w, videoButton.h, 10, 10)
+        love.graphics.setColor(1, 1, 1)
+        love.graphics.printf(videoButton.label, videoButton.x + 6, videoButton.y + 11, videoButton.w - 12, "center")
+    end
+
     love.graphics.setColor(game.confirm_empty_build_enabled and 0.24 or 0.14, game.confirm_empty_build_enabled and 0.52 or 0.24, 0.3)
     love.graphics.rectangle("fill", game.confirm_toggle_button.x, game.confirm_toggle_button.y, game.confirm_toggle_button.w, game.confirm_toggle_button.h, 10, 10)
     love.graphics.setColor(1, 1, 1)

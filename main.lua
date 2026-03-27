@@ -17,6 +17,7 @@ local update = require("src.app.update")
 local render = require("src.app.render")
 local profile = require("src.app.profile")
 local save = require("src.app.save")
+local video = require("src.app.video")
 
 -- main.lua now stays intentionally thin:
 -- it creates the root state, loads shared assets and delegates input/update/draw.
@@ -59,6 +60,7 @@ function love.load()
         score = score,
         profile = profile,
         save = save,
+        video = video,
         navigation = navigation,
         ui = ui,
         buildings = buildings

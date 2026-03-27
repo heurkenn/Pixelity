@@ -9,6 +9,7 @@ buildings.types = {
         name = "House",
         base_score = 5,
         price = 3,
+        rarity = "common",
         color = {0.2, 0.6, 1},
         sprite_path = "assets/house_sheets.png",
         effects = {
@@ -22,6 +23,7 @@ buildings.types = {
         name = "Park",
         base_score = 15,
         price = 4,
+        rarity = "common",
         color = {0.2, 0.8, 0.2},
         sprite_path = "assets/park_sheets.png",
         effects = {
@@ -34,6 +36,7 @@ buildings.types = {
         name = "Factory",
         base_score = 50,
         price = 5,
+        rarity = "uncommon",
         color = {0.8, 0.2, 0.2},
         sprite_path = "assets/factory_sheets.png",
         effects = {}
@@ -42,10 +45,10 @@ buildings.types = {
         id = 4,
         name = "Bank",
         base_score = 5,
-        price = 8,
+        price = 6,
+        rarity = "rare",
         color = {0.8, 0.8, 0.2},
         sprite_path = "assets/bank_sheets.png",
-        shop_only = true,
         effects = {
             { type = "money_reward", source = "bank", value = 1 }
         }
@@ -55,9 +58,9 @@ buildings.types = {
         name = "Immeuble",
         base_score = 10,
         price = 5,
+        rarity = "uncommon",
         color = {0.58, 0.58, 0.68},
         sprite_path = "assets/building_sheets.png",
-        shop_only = true,
         effects = {
             -- Stacking another Immeuble on top raises its level, doubling its final score.
             { type = "stack_multiplier", source = "tower", multiplier = 2 }

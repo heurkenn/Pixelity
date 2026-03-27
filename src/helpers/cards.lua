@@ -55,42 +55,51 @@ function cards.drawMiniCard(rect, title, subtitle, alpha, highlight)
 end
 
 -- Dessine une carte de main complete avec son contenu visible.
-function cards.drawHandCard(card, x, y, selected, alpha)
+function cards.drawHandCard(card, x, y, selected, alpha, width, height)
     alpha = alpha or 1
+    width = width or constants.HAND_CARD_WIDTH
+    height = height or constants.HAND_CARD_HEIGHT
+    local imagePadding = math.floor(width * 0.13)
+    local imageHeight = math.floor(height * 0.34)
+    local titleY = y + math.floor(height * 0.55)
+    local statY = y + math.floor(height * 0.69)
+
     love.graphics.setColor(0.94, 0.9, 0.8, alpha)
-    love.graphics.rectangle("fill", x, y, constants.HAND_CARD_WIDTH, constants.HAND_CARD_HEIGHT, 12, 12)
+    love.graphics.rectangle("fill", x, y, width, height, 12, 12)
     love.graphics.setColor(0.15, 0.15, 0.15, alpha)
-    love.graphics.rectangle("line", x, y, constants.HAND_CARD_WIDTH, constants.HAND_CARD_HEIGHT, 12, 12)
+    love.graphics.rectangle("line", x, y, width, height, 12, 12)
 
     love.graphics.setColor(card.color[1], card.color[2], card.color[3], alpha)
-    love.graphics.rectangle("fill", x + 16, y + 18, constants.HAND_CARD_WIDTH - 32, 54, 10, 10)
+    love.graphics.rectangle("fill", x + imagePadding, y + 16, width - (imagePadding * 2), imageHeight, 10, 10)
 
     love.graphics.setColor(0.12, 0.12, 0.12, alpha)
-    love.graphics.print(card.name, x + 14, y + 88)
-    love.graphics.print("Base: " .. card.base_score, x + 14, y + 110)
+    love.graphics.printf(card.name, x + 10, titleY, width - 20, "center")
+    love.graphics.printf("Base: " .. card.base_score, x + 10, statY, width - 20, "center")
 
     if selected then
         love.graphics.setColor(0.96, 0.72, 0.18, alpha)
         love.graphics.setLineWidth(3)
-        love.graphics.rectangle("line", x - 2, y - 2, constants.HAND_CARD_WIDTH + 4, constants.HAND_CARD_HEIGHT + 4, 14, 14)
+        love.graphics.rectangle("line", x - 2, y - 2, width + 4, height + 4, 14, 14)
         love.graphics.setLineWidth(1)
     end
 end
 
 -- Dessine une carte de main cachee pour les effets de boss.
-function cards.drawHiddenHandCard(x, y, selected, alpha)
+function cards.drawHiddenHandCard(x, y, selected, alpha, width, height)
     alpha = alpha or 1
+    width = width or constants.HAND_CARD_WIDTH
+    height = height or constants.HAND_CARD_HEIGHT
     love.graphics.setColor(0.18, 0.2, 0.26, alpha)
-    love.graphics.rectangle("fill", x, y, constants.HAND_CARD_WIDTH, constants.HAND_CARD_HEIGHT, 12, 12)
+    love.graphics.rectangle("fill", x, y, width, height, 12, 12)
     love.graphics.setColor(0.35, 0.38, 0.45, alpha)
-    love.graphics.rectangle("line", x, y, constants.HAND_CARD_WIDTH, constants.HAND_CARD_HEIGHT, 12, 12)
+    love.graphics.rectangle("line", x, y, width, height, 12, 12)
     love.graphics.setColor(1, 1, 1, alpha)
-    love.graphics.printf("???", x, y + 66, constants.HAND_CARD_WIDTH, "center")
+    love.graphics.printf("???", x, y + math.floor((height - 24) / 2), width, "center")
 
     if selected then
         love.graphics.setColor(0.96, 0.72, 0.18, alpha)
         love.graphics.setLineWidth(3)
-        love.graphics.rectangle("line", x - 2, y - 2, constants.HAND_CARD_WIDTH + 4, constants.HAND_CARD_HEIGHT + 4, 14, 14)
+        love.graphics.rectangle("line", x - 2, y - 2, width + 4, height + 4, 14, 14)
         love.graphics.setLineWidth(1)
     end
 end

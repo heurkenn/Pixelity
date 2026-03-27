@@ -3,6 +3,7 @@
 
 local shared = {}
 
+-- Gere les clics communs de la popup options, y compris l'affichage video.
 function shared.handleOptionsClick(ctx, x, y)
     local game = ctx.game
     local layout = ctx.layout
@@ -16,6 +17,22 @@ function shared.handleOptionsClick(ctx, x, y)
         if layout.pointInRect(x, y, speedButton) then
             game.scoring_speed = speedButton.multiplier
             game.message = "Vitesse du scoring: x" .. speedButton.multiplier
+            return true
+        end
+    end
+
+    for _, videoButton in ipairs(game.video_mode_buttons or {}) do
+        if layout.pointInRect(x, y, videoButton) then
+            if videoButton.id == "windowed" then
+                ctx.video.setWindowed(game)
+                game.message = "Affichage: fenetre"
+            elseif videoButton.id == "fullscreen" then
+                ctx.video.setFullscreen(game)
+                game.message = "Affichage: plein ecran"
+            elseif videoButton.id == "borderless" then
+                ctx.video.setBorderlessFullscreen(game)
+                game.message = "Affichage: plein ecran fenetre"
+            end
             return true
         end
     end

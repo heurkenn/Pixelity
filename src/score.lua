@@ -79,6 +79,27 @@ local function collectLineRuns(getCellValue)
     return runs
 end
 
+-- Compte les paires adjacentes d'Immeuble sans compter deux fois la meme liaison.
+local function countAdjacentTowerPairs()
+    local total = 0
+    local size = grid.getSize()
+
+    for y = 1, size do
+        for x = 1, size do
+            if grid.getCell(x, y) == 5 then
+                if x < size and grid.getCell(x + 1, y) == 5 then
+                    total = total + 1
+                end
+                if y < size and grid.getCell(x, y + 1) == 5 then
+                    total = total + 1
+                end
+            end
+        end
+    end
+
+    return total
+end
+
 -- Ajoute les bonus de lois en fin de calcul de grille.
 local function applyLawBonuses(resolution, laws)
     local total = 0
@@ -116,6 +137,18 @@ local function applyLawBonuses(resolution, laws)
                 end
 
                 total = total + (segmentCount * effect.bonus)
+            elseif effect.type == "adjacent_towers_bonus" then
+                local pairCount = countAdjacentTowerPairs()
+
+                for _ = 1, pairCount do
+                    table.insert(resolution, {
+                        step_type = "law",
+                        law_name = law.name,
+                        points = effect.bonus
+                    })
+                end
+
+                total = total + (pairCount * effect.bonus)
             end
         end
     end

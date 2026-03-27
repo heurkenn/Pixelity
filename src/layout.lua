@@ -123,17 +123,42 @@ function layout.getCellFromScreen(x, y, grid)
 end
 
 -- Hand cards are laid out from the bottom center so resizing stays predictable.
+-- Retourne les dimensions dynamiques de la main selon la taille de fenetre.
+function layout.getHandMetrics(handCount)
+    local width = love.graphics.getWidth()
+    local height = love.graphics.getHeight()
+    local count = math.max(handCount, 1)
+    local cardWidth = math.floor(math.max(80, math.min(108, width * 0.07)))
+    local cardHeight = math.floor(cardWidth * 1.33)
+    local gap = math.floor(math.max(6, math.min(12, width * 0.0065)))
+    local totalWidth = (count * cardWidth) + ((count - 1) * gap)
+
+    if totalWidth > width - 320 then
+        local availableWidth = math.max(1, width - 320)
+        local scale = availableWidth / totalWidth
+        cardWidth = math.floor(cardWidth * scale)
+        cardHeight = math.floor(cardHeight * scale)
+        gap = math.max(4, math.floor(gap * scale))
+        totalWidth = (count * cardWidth) + ((count - 1) * gap)
+    end
+
+    return {
+        width = cardWidth,
+        height = cardHeight,
+        gap = gap,
+        start_x = (width - totalWidth) / 2,
+        start_y = height - cardHeight - math.floor(math.max(18, math.min(26, height * 0.03)))
+    }
+end
+
 -- Retourne le rectangle d'une carte de main selon son index.
 function layout.getCardRect(index, handCount)
-    local count = math.max(handCount, 1)
-    local totalWidth = (count * constants.HAND_CARD_WIDTH) + ((count - 1) * constants.HAND_GAP)
-    local startX = (love.graphics.getWidth() - totalWidth) / 2
-    local startY = love.graphics.getHeight() - constants.HAND_CARD_HEIGHT - 28
+    local metrics = layout.getHandMetrics(handCount)
 
-    return startX + ((index - 1) * (constants.HAND_CARD_WIDTH + constants.HAND_GAP)),
-        startY,
-        constants.HAND_CARD_WIDTH,
-        constants.HAND_CARD_HEIGHT
+    return metrics.start_x + ((index - 1) * (metrics.width + metrics.gap)),
+        metrics.start_y,
+        metrics.width,
+        metrics.height
 end
 
 -- Detecte quelle carte de main se trouve sous le pointeur.
@@ -216,7 +241,7 @@ function layout.updateButtons(game, mayorTypes, difficulties, scoringSpeedOption
         }
     }
 
-    local centeredModal = layout.centerRectInRect({ x = 0, y = 0, w = width, h = height }, 520, 360)
+    local centeredModal = layout.centerRectInRect({ x = 0, y = 0, w = width, h = height }, 560, 450)
     local optionsInner = layout.insetRect(centeredModal, 28, 78)
     local speedRects = layout.distributeRowInRect(
         {
@@ -251,18 +276,57 @@ function layout.updateButtons(game, mayorTypes, difficulties, scoringSpeedOption
         }
     end
 
+    local videoRects = layout.distributeRowInRect(
+        {
+            x = optionsInner.x,
+            y = optionsInner.y + 118,
+            w = optionsInner.w,
+            h = 44
+        },
+        3,
+        146,
+        40,
+        10
+    )
+    game.video_mode_buttons = {
+        {
+            id = "windowed",
+            label = "Fenetre",
+            x = videoRects[1].x,
+            y = videoRects[1].y,
+            w = videoRects[1].w,
+            h = videoRects[1].h
+        },
+        {
+            id = "fullscreen",
+            label = "Plein ecran",
+            x = videoRects[2].x,
+            y = videoRects[2].y,
+            w = videoRects[2].w,
+            h = videoRects[2].h
+        },
+        {
+            id = "borderless",
+            label = "Plein ecran fenetre",
+            x = videoRects[3].x,
+            y = videoRects[3].y,
+            w = videoRects[3].w,
+            h = videoRects[3].h
+        }
+    }
+
     game.confirm_toggle_button = {
         x = optionsInner.x + ((optionsInner.w - 240) / 2),
-        y = optionsInner.y + 120,
+        y = optionsInner.y + 196,
         w = 240,
         h = 48
     }
 
     game.options_back_to_menu_button = {
         x = optionsInner.x + ((optionsInner.w - 240) / 2),
-        y = centeredModal.y + centeredModal.h - 74,
+        y = centeredModal.y + centeredModal.h - 78,
         w = 240,
-        h = 44
+        h = 46
     }
 
     local codexPanel = layout.centerRectInRect({ x = 0, y = 0, w = width, h = height }, 800, 560)

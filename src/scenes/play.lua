@@ -96,29 +96,30 @@ end
 -- Dessine la main visible ou cachee selon le boss courant.
 function play.drawHand(game, player)
     local hidden = shouldHideHand(player)
+    local metrics = layout.getHandMetrics(#player.hand)
 
     if game.dealing_timer > 0 then
         local progress = 1 - (game.dealing_timer / 0.75)
         for index, card in ipairs(player.hand) do
-            local targetX, targetY = layout.getCardRect(index, #player.hand)
+            local targetX, targetY, cardW, cardH = layout.getCardRect(index, #player.hand)
             local fromY = love.graphics.getHeight() + 120
             local animatedY = fromY + ((targetY - fromY) * math.min(progress * 1.15, 1))
             if hidden then
-                cards.drawHiddenHandCard(targetX, animatedY, game.selected_hand_index == index)
+                cards.drawHiddenHandCard(targetX, animatedY, game.selected_hand_index == index, 1, cardW, cardH)
             else
-                cards.drawHandCard(card, targetX, animatedY, game.selected_hand_index == index)
+                cards.drawHandCard(card, targetX, animatedY, game.selected_hand_index == index, 1, cardW, cardH)
             end
         end
         return
     end
 
     for index, card in ipairs(player.hand) do
-        local cardX, cardY = layout.getCardRect(index, #player.hand)
+        local cardX, cardY, cardW, cardH = layout.getCardRect(index, #player.hand)
         if not (game.dragging.active and game.dragging.hand_index == index) then
             if hidden then
-                cards.drawHiddenHandCard(cardX, cardY, game.selected_hand_index == index)
+                cards.drawHiddenHandCard(cardX, cardY, game.selected_hand_index == index, 1, cardW, cardH)
             else
-                cards.drawHandCard(card, cardX, cardY, game.selected_hand_index == index)
+                cards.drawHandCard(card, cardX, cardY, game.selected_hand_index == index, 1, cardW, cardH)
             end
         end
     end
@@ -129,7 +130,9 @@ function play.drawHand(game, player)
                 game.dragging.x - game.dragging.offset_x,
                 game.dragging.y - game.dragging.offset_y,
                 true,
-                0.92
+                0.92,
+                metrics.width,
+                metrics.height
             )
         else
             cards.drawHandCard(
@@ -137,7 +140,9 @@ function play.drawHand(game, player)
                 game.dragging.x - game.dragging.offset_x,
                 game.dragging.y - game.dragging.offset_y,
                 true,
-                0.92
+                0.92,
+                metrics.width,
+                metrics.height
             )
         end
     end

@@ -196,7 +196,7 @@ function save.loadRun(game, player, grid)
     player.total_score = payload.player.total_score or 0
     player.available_builds = payload.player.available_builds or 3
     player.available_redraws = payload.player.available_redraws or 2
-    player.hand_size = payload.player.hand_size or 5
+    player.hand_size = payload.player.hand_size or 7
     player.hand_can_redraw = payload.player.hand_can_redraw == true
     player.deck_empty = payload.player.deck_empty == true
     player.owned_buildings = payload.player.owned_buildings or {}

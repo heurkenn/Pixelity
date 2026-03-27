@@ -15,14 +15,24 @@ function gameplay.getDifficulty(game)
     return round_flow.getDifficulty(game.selected_difficulty_id)
 end
 
--- Recherche un placement temporaire sur une case de grille donnee.
+-- Recherche le dernier placement temporaire sur une case pour manipuler le dessus de pile.
 function gameplay.getPendingPlacementAt(game, x, y)
-    for index, placement in ipairs(game.pending_placements) do
+    for index = #game.pending_placements, 1, -1 do
+        local placement = game.pending_placements[index]
         if placement.x == x and placement.y == y then
             return placement, index
         end
     end
     return nil, nil
+end
+
+-- Retourne le type de batiment qui occupera une case apres les placements en attente.
+local function getProjectedCellId(game, grid, x, y)
+    local pendingPlacement = gameplay.getPendingPlacementAt(game, x, y)
+    if pendingPlacement then
+        return pendingPlacement.card.id
+    end
+    return grid.getCell(x, y)
 end
 
 -- Verifie si une case est libre pour y poser une carte.
@@ -162,8 +172,9 @@ end
 
 -- Tente de poser une carte de main sur une case cible.
 function gameplay.placeCardFromHand(game, player, grid, handIndex, x, y)
-    if #game.pending_placements >= 4 then
-        game.message = "Maximum 4 cartes avant BUILD."
+    local maxPendingPlacements = player.getMaxPendingPlacements and player.getMaxPendingPlacements() or 4
+    if #game.pending_placements >= maxPendingPlacements then
+        game.message = "Maximum " .. maxPendingPlacements .. " cartes avant BUILD."
         return false
     end
 
@@ -174,8 +185,8 @@ function gameplay.placeCardFromHand(game, player, grid, handIndex, x, y)
 
     -- Immeuble is the only card that can legally target an occupied cell:
     -- stacking it upgrades the existing Immeuble instead of replacing the tile.
-    local existingId = grid.getCell(x, y)
-    local isTowerUpgrade = card.id == 5 and existingId == 5
+    local projectedId = getProjectedCellId(game, grid, x, y)
+    local isTowerUpgrade = card.id == 5 and projectedId == 5
 
     if not isTowerUpgrade and not gameplay.canPlaceAt(game, grid, x, y) then
         player.returnCardToHand(card)

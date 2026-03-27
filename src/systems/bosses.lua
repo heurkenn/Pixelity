@@ -20,15 +20,12 @@ local function shuffleIds()
     return ids
 end
 
--- Liste les cases de grille contenant encore un batiment destructible.
-local function collectDestroyableCells(grid)
+-- Liste toutes les cases de la grille, meme si elles sont vides.
+local function collectAllCells(grid)
     local cells = {}
     for y = 1, grid.getSize() do
         for x = 1, grid.getSize() do
-            local value = grid.getCell(x, y)
-            if value ~= 0 and value ~= grid.getObstacleId() then
-                table.insert(cells, { x = x, y = y })
-            end
+            table.insert(cells, { x = x, y = y })
         end
     end
     return cells
@@ -42,6 +39,12 @@ local function sortCells(cells)
         end
         return a.y < b.y
     end)
+end
+
+-- Indique si une case doit etre integree a une sequence de destruction boss.
+local function isDestroyableByBoss(grid, x, y)
+    local value = grid.getCell(x, y)
+    return value ~= 0
 end
 
 -- Construit l'ordre aleatoire des boss d'une nouvelle run.
@@ -144,7 +147,7 @@ function bosses.applyBuildEffects(game, player, grid)
 
     for _, effect in ipairs(bossData.effects or {}) do
         if effect.type == "destroy_random_cells_on_build" then
-            local cells = collectDestroyableCells(grid)
+            local cells = collectAllCells(grid)
             for _ = 1, math.min(effect.count or 0, #cells) do
                 local pickIndex = love.math.random(1, #cells)
                 local picked = table.remove(cells, pickIndex)
@@ -176,7 +179,7 @@ function bosses.applyBuildEffects(game, player, grid)
             local seen = {}
             local cells = {}
             for x = 1, grid.getSize() do
-                if grid.getCell(x, row) ~= 0 and grid.getCell(x, row) ~= grid.getObstacleId() then
+                if isDestroyableByBoss(grid, x, row) then
                     local key = x .. ":" .. row
                     if not seen[key] then
                         seen[key] = true
@@ -185,7 +188,7 @@ function bosses.applyBuildEffects(game, player, grid)
                 end
             end
             for y = 1, grid.getSize() do
-                if grid.getCell(column, y) ~= 0 and grid.getCell(column, y) ~= grid.getObstacleId() then
+                if isDestroyableByBoss(grid, column, y) then
                     local key = column .. ":" .. y
                     if not seen[key] then
                         seen[key] = true

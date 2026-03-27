@@ -3,6 +3,7 @@
 
 local constants = require("src.constants")
 local layout = require("src.layout")
+local profile = require("src.app.profile")
 
 local resolution = {}
 
@@ -65,6 +66,24 @@ function resolution.spawnScorePopup(game, stepData)
     }
 end
 
+-- Applique la destruction d'une case par un boss et gere le cas particulier des obstacles.
+local function resolveBossDestructionStep(game, player, step)
+    local previousValue = game.grid_ref.getCell(step.x, step.y)
+    if previousValue == 0 then
+        return
+    end
+
+    game.highlight_cell = { x = step.x, y = step.y, label = step.label }
+    game.grid_ref.setCell(step.x, step.y, 0)
+    game.grid_ref.setCellLevel(step.x, step.y, 0)
+
+    if previousValue == game.grid_ref.getObstacleId() then
+        local reward = love.math.random(1, 3)
+        player.addMoney(reward)
+        profile.recordObstacleDestroyed(1)
+    end
+end
+
 -- Fait avancer soit l'effet boss, soit la resolution du score case par case.
 function resolution.updateResolution(game, player, onFinishResolution, dt)
     if game.boss_effect and game.boss_effect.active then
@@ -90,9 +109,7 @@ function resolution.updateResolution(game, player, onFinishResolution, dt)
             return
         end
 
-        game.highlight_cell = { x = step.x, y = step.y, label = step.label }
-        game.grid_ref.setCell(step.x, step.y, 0)
-        game.grid_ref.setCellLevel(step.x, step.y, 0)
+        resolveBossDestructionStep(game, player, step)
         return
     end
 
