@@ -284,7 +284,7 @@ function layout.updateButtons(game, mayorTypes, difficulties, scoringSpeedOption
             h = 44
         },
         3,
-        146,
+        160,
         40,
         10
     )

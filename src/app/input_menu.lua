@@ -16,16 +16,22 @@ function input_menu.handleMenuClick(ctx, x, y)
     local save = ctx.save
 
     if game.debug_open then
-        for _, buttonRect in ipairs(game.debug_buttons.scenarios or {}) do
-            if layout.pointInRect(x, y, buttonRect) then
-                gameplay.startDebugScenario(game, player, grid, buttonRect.id)
-                return true
-            end
-        end
-
         if layout.pointInRect(x, y, game.debug_buttons.close) then
             game.debug_open = false
             return true
+        end
+
+        if not layout.pointInRect(x, y, game.debug_content_area) and not layout.pointInRect(x, y, game.debug_panel) then
+            return true
+        end
+
+        for _, buttonRect in ipairs(game.debug_buttons.scenarios or {}) do
+            if buttonRect.y + buttonRect.h >= game.debug_content_area.y
+                and buttonRect.y <= game.debug_content_area.y + game.debug_content_area.h
+                and layout.pointInRect(x, y, buttonRect) then
+                gameplay.startDebugScenario(game, player, grid, buttonRect.id)
+                return true
+            end
         end
 
         return true
