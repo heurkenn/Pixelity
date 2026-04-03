@@ -101,24 +101,14 @@ end
 -- Dessine la grille, ses batiments, les placements temporaires et les alertes boss.
 function play.drawGrid(game, grid, buildings, getPendingPlacementAt)
     local cells = grid.getCells()
-    local offsetX, offsetY = layout.getGridOffset()
     local hidden = shouldHideBoard(game)
 
     for y = 1, constants.GRID_SIZE do
         for x = 1, constants.GRID_SIZE do
-            local posX = offsetX + (x - 1) * constants.TILE_SIZE
-            local posY = offsetY + (y - 1) * constants.TILE_SIZE
+            local posX, posY = layout.getCellScreenPosition(x, y)
             local pendingPlacement = getPendingPlacementAt(x, y)
 
-            love.graphics.setColor(0.22, 0.25, 0.29)
-            love.graphics.rectangle("fill", posX, posY, constants.TILE_SIZE, constants.TILE_SIZE)
-            love.graphics.setColor(0.42, 0.45, 0.5)
-            love.graphics.rectangle("line", posX, posY, constants.TILE_SIZE, constants.TILE_SIZE)
-
-            if game.highlight_cell and game.highlight_cell.x == x and game.highlight_cell.y == y then
-                love.graphics.setColor(0.95, 0.78, 0.28, 0.35)
-                love.graphics.rectangle("fill", posX, posY, constants.TILE_SIZE, constants.TILE_SIZE)
-            end
+            board.drawGroundTile(posX, posY, game.highlight_cell and game.highlight_cell.x == x and game.highlight_cell.y == y, 0.35)
 
             local buildingID = cells[y][x]
             if buildingID ~= 0 then
@@ -126,39 +116,44 @@ function play.drawGrid(game, grid, buildings, getPendingPlacementAt)
             end
 
             if pendingPlacement then
-                love.graphics.setColor(1, 1, 1, 0.2)
-                love.graphics.rectangle("fill", posX, posY, constants.TILE_SIZE, constants.TILE_SIZE)
+                board.drawGroundTile(posX, posY, true, 0.18)
                 board.drawBuildingTile(buildings, grid, pendingPlacement.card.id, posX, posY, 0.8, x, y, hidden)
             end
         end
     end
 
     if game.boss_effect and game.boss_effect.markers then
+        local gridOriginX, gridOriginY = layout.getGridOffset()
         for _, marker in ipairs(game.boss_effect.markers) do
             if marker.type == "cell" then
                 local cellX, cellY = layout.getCellScreenPosition(marker.x, marker.y)
                 love.graphics.setColor(0.95, 0.22, 0.16, 0.92)
-                love.graphics.rectangle("fill", cellX + 8, cellY + 8, constants.TILE_SIZE - 16, constants.TILE_SIZE - 16, 8, 8)
-                fonts.drawOutlinedText("!", cellX, cellY + 6, {
+                love.graphics.polygon("fill",
+                    cellX + (constants.ISO_TILE_WIDTH / 2), cellY + 8,
+                    cellX + constants.ISO_TILE_WIDTH - 10, cellY + (constants.ISO_TILE_HEIGHT / 2),
+                    cellX + (constants.ISO_TILE_WIDTH / 2), cellY + constants.ISO_TILE_HEIGHT - 8,
+                    cellX + 10, cellY + (constants.ISO_TILE_HEIGHT / 2)
+                )
+                fonts.drawOutlinedText("!", cellX, cellY - 2, {
                     font = fonts.getScoreFont(),
                     mode = "printf",
-                    limit = constants.TILE_SIZE,
+                    limit = constants.ISO_TILE_WIDTH,
                     align = "center",
                     outline = 1
                 })
             elseif marker.type == "row" then
-                local _, rowY = layout.getCellScreenPosition(1, marker.index)
+                local rowRect = layout.getCellScreenRect(1, marker.index)
                 love.graphics.setColor(0.9, 0.3, 0.2, 0.9)
-                love.graphics.rectangle("fill", offsetX - 36, rowY + 10, 24, constants.TILE_SIZE - 20, 6, 6)
-                fonts.drawOutlinedText("!", offsetX - 34, rowY + 8, {
+                love.graphics.rectangle("fill", gridOriginX - (constants.GRID_SIZE * constants.ISO_TILE_WIDTH / 2) - 36, rowRect.y + 12, 24, constants.ISO_TILE_HEIGHT - 16, 6, 6)
+                fonts.drawOutlinedText("!", gridOriginX - (constants.GRID_SIZE * constants.ISO_TILE_WIDTH / 2) - 34, rowRect.y + 10, {
                     font = fonts.getScoreFont(),
                     outline = 1
                 })
             elseif marker.type == "column" then
-                local columnX = offsetX + ((marker.index - 1) * constants.TILE_SIZE)
+                local columnRect = layout.getCellScreenRect(marker.index, 1)
                 love.graphics.setColor(0.9, 0.3, 0.2, 0.9)
-                love.graphics.rectangle("fill", columnX + 10, offsetY - 34, constants.TILE_SIZE - 20, 24, 6, 6)
-                fonts.drawOutlinedText("!", columnX + 18, offsetY - 42, {
+                love.graphics.rectangle("fill", columnRect.x + 18, gridOriginY - 38, constants.ISO_TILE_WIDTH - 36, 24, 6, 6)
+                fonts.drawOutlinedText("!", columnRect.x + 10, gridOriginY - 46, {
                     font = fonts.getScoreFont(),
                     outline = 1
                 })
@@ -280,7 +275,7 @@ function play.drawHUD(game, player)
     if game.highlight_cell and game.highlight_cell.x and game.highlight_cell.y and game.highlight_cell.points then
         local cellX, cellY = layout.getCellScreenPosition(game.highlight_cell.x, game.highlight_cell.y)
         love.graphics.setColor(1, 0.95, 0.6)
-        love.graphics.print("+" .. game.highlight_cell.points, cellX + constants.TILE_SIZE + 6, cellY + 12)
+        love.graphics.print("+" .. game.highlight_cell.points, cellX + constants.ISO_TILE_WIDTH + 6, cellY + 10)
     end
 
     if player.deck_empty and #player.deck == 0 then

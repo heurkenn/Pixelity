@@ -4,6 +4,11 @@ local constants = {}
 
 constants.GRID_SIZE = 5
 constants.TILE_SIZE = 64
+constants.ISO_TILE_WIDTH = 108
+constants.ISO_TILE_HEIGHT = 54
+constants.ISO_BUILDING_FRAME_WIDTH = 96
+constants.ISO_BUILDING_FRAME_HEIGHT = 96
+constants.ISO_GRID_TOP_Y = 196
 constants.HAND_CARD_WIDTH = 120
 constants.HAND_CARD_HEIGHT = 160
 constants.HAND_GAP = 18

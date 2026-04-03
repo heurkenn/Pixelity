@@ -12,7 +12,7 @@ buildings.types = {
         price = 3,
         rarity = "common",
         color = {0.2, 0.6, 1},
-        sprite_path = "assets/house_sheets.png",
+        sprite_path = "assets/house_sheets_iso.png",
         effects = {
             { trigger = "scoring", type = "adjacent_bonus", target = "house", value = 5 },
             { trigger = "scoring", type = "adjacent_bonus", target = "park", value = 10 },
@@ -153,8 +153,14 @@ function buildings.loadImages()
         if love.filesystem.getInfo(b.sprite_path) then
             b.image = love.graphics.newImage(b.sprite_path)
             b.quads = {}
+            local imageWidth, imageHeight = b.image:getDimensions()
+            local frameWidth = b.frame_width or math.floor(imageWidth / 3)
+            local frameHeight = b.frame_height or imageHeight
+            b.frame_width = frameWidth
+            b.frame_height = frameHeight
+
             for i = 0, 2 do
-                b.quads[i + 1] = love.graphics.newQuad(i * 32, 0, 32, 32, b.image:getDimensions())
+                b.quads[i + 1] = love.graphics.newQuad(i * frameWidth, 0, frameWidth, frameHeight, imageWidth, imageHeight)
             end
         else
             print("Warning: Sprite non trouve pour " .. b.name)

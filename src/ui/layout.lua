@@ -135,13 +135,32 @@ end
 -- Grid stays centered horizontally while keeping a fixed top margin for the HUD.
 -- Retourne l'origine ecran de la grille de jeu.
 function layout.getGridOffset()
-    return (love.graphics.getWidth() - (constants.GRID_SIZE * constants.TILE_SIZE)) / 2, 140
+    return love.graphics.getWidth() / 2, constants.ISO_GRID_TOP_Y
+end
+
+-- Retourne le centre ecran de la case isometrique.
+function layout.getCellScreenCenter(x, y)
+    local originX, originY = layout.getGridOffset()
+    return
+        originX + ((x - y) * (constants.ISO_TILE_WIDTH / 2)),
+        originY + (((x + y) - 2) * (constants.ISO_TILE_HEIGHT / 2))
 end
 
 -- Convertit des coordonnees grille en coordonnees ecran.
 function layout.getCellScreenPosition(x, y)
-    local offsetX, offsetY = layout.getGridOffset()
-    return offsetX + (x - 1) * constants.TILE_SIZE, offsetY + (y - 1) * constants.TILE_SIZE
+    local centerX, centerY = layout.getCellScreenCenter(x, y)
+    return centerX - (constants.ISO_TILE_WIDTH / 2), centerY - (constants.ISO_TILE_HEIGHT / 2)
+end
+
+-- Retourne le rectangle ecran de l'empreinte d'une case isometrique.
+function layout.getCellScreenRect(x, y)
+    local cellX, cellY = layout.getCellScreenPosition(x, y)
+    return {
+        x = cellX,
+        y = cellY,
+        w = constants.ISO_TILE_WIDTH,
+        h = constants.ISO_TILE_HEIGHT
+    }
 end
 
 -- Retourne l'ancre ecran utilisee par l'affichage du score courant.
@@ -149,13 +168,27 @@ function layout.getScoreAnchor()
     return 80, 88
 end
 
+-- Indique si un point se situe a l'interieur d'un losange isometrique.
+function layout.pointInDiamond(px, py, rect)
+    local centerX = rect.x + (rect.w / 2)
+    local centerY = rect.y + (rect.h / 2)
+    local normalizedX = math.abs(px - centerX) / (rect.w / 2)
+    local normalizedY = math.abs(py - centerY) / (rect.h / 2)
+    return (normalizedX + normalizedY) <= 1
+end
+
 -- Convertit un clic ecran en coordonnees de grille si la case existe.
 function layout.getCellFromScreen(x, y, grid)
-    local offsetX, offsetY = layout.getGridOffset()
-    local gridX = math.floor((x - offsetX) / constants.TILE_SIZE) + 1
-    local gridY = math.floor((y - offsetY) / constants.TILE_SIZE) + 1
+    local originX, originY = layout.getGridOffset()
+    local dx = x - originX
+    local dy = y - originY
+    local halfWidth = constants.ISO_TILE_WIDTH / 2
+    local halfHeight = constants.ISO_TILE_HEIGHT / 2
 
-    if grid.isInside(gridX, gridY) then
+    local gridX = math.floor((((dx / halfWidth) + (dy / halfHeight) + 2) / 2) + 0.5)
+    local gridY = math.floor((((dy / halfHeight) - (dx / halfWidth) + 2) / 2) + 0.5)
+
+    if grid.isInside(gridX, gridY) and layout.pointInDiamond(x, y, layout.getCellScreenRect(gridX, gridY)) then
         return gridX, gridY
     end
 

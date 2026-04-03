@@ -52,6 +52,7 @@ Voir [BUILD.md](/home/kali/Pixelity/BUILD.md).
 Raccourci principal :
 
 ```bash
+./scripts/build.sh love
 ./scripts/build.sh linux
 ./scripts/build.sh windows
 ```
@@ -85,6 +86,7 @@ Nettoyage Windows :
 Pour comprendre l'architecture plus vite :
 - [PROJECT_FILES.md](/home/kali/Pixelity/PROJECT_FILES.md)
 - [ARCHITECTURE_GUIDE.md](/home/kali/Pixelity/ARCHITECTURE_GUIDE.md)
+- [SPRITE_GUIDE.md](/home/kali/Pixelity/SPRITE_GUIDE.md)
 
 ## Direction De Gameplay
 

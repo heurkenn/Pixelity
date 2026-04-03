@@ -48,8 +48,8 @@ function resolution.spawnScorePopup(game, stepData)
         }
     else
         local cellX, cellY = layout.getCellScreenPosition(stepData.x, stepData.y)
-        startX = cellX + constants.TILE_SIZE + 6
-        startY = cellY + 12
+        startX = cellX + constants.ISO_TILE_WIDTH + 6
+        startY = cellY + 8
         game.highlight_cell = { x = stepData.x, y = stepData.y, points = stepData.points }
     end
 

@@ -58,7 +58,7 @@ plus toutes les `DLL` de la distribution officielle.
 ./scripts/build.sh windows
 ```
 
-Ce script appelle simplement le bon script specialise.
+Ce script contient maintenant toute la logique de build cote shell.
 
 ### Windows PowerShell
 
@@ -95,7 +95,7 @@ Pour nettoyer les sorties :
 ### Generer seulement le `.love`
 
 ```bash
-./scripts/build_love.sh
+./scripts/build.sh love
 ```
 
 Sortie :
@@ -107,7 +107,7 @@ dist/Pixelity.love
 ### Build Linux
 
 ```bash
-./scripts/build_linux.sh
+./scripts/build.sh linux
 ```
 
 Sortie :
@@ -124,7 +124,7 @@ Dedans :
 ### Build Windows
 
 ```bash
-./scripts/build_windows.sh
+./scripts/build.sh windows
 ```
 
 Sortie :
