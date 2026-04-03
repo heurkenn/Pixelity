@@ -3,6 +3,7 @@
 local score = {}
 local grid = require("src.game.grid")
 local buildings = require("src.data.buildings")
+local building_effects = require("src.game.systems.building_effects")
 
 local HOUSE_ID = 1
 local ADJACENCY_KEYS = {
@@ -10,15 +11,43 @@ local ADJACENCY_KEYS = {
     park = "parks",
     factory = "factories",
     bank = "banks",
-    tower = "towers"
+    casino = "casinos",
+    tower = "towers",
+    bourgeois_king = "bourgeois_kings",
+    mec_donatien = "mec_donatiens"
 }
-local BUILDING_NAMES = {
-    [1] = "house",
-    [2] = "park",
-    [3] = "factory",
-    [4] = "bank",
-    [5] = "tower"
+
+local SCORE_LAW_EFFECT_TYPES = {
+    aligned_houses = true,
+    adjacent_towers_bonus = true,
+    building_count_bonus = true
 }
+
+-- Retourne la cle logique d'un batiment place sur la grille.
+local function getBuildingKey(buildingId)
+    local building = buildings.getData(buildingId)
+    return building and building.key or nil
+end
+
+-- Retourne le multiplicateur des effets de maire actifs grace aux batiments du plateau.
+local function getMayorEffectMultiplier()
+    return building_effects.getTriggeredMultiplier(grid, "board_modifier", "mayor_effect_multiplier")
+end
+
+-- Ajuste une valeur de loi selon les modificateurs actifs du plateau.
+local function getAdjustedLawValue(effect, baseValue)
+    local adjustedValue = baseValue
+
+    for _, activeEffect in ipairs(building_effects.collectTriggeredEffects(grid, "board_modifier", "law_effect_multiplier")) do
+        if SCORE_LAW_EFFECT_TYPES[effect.type] then
+            adjustedValue = adjustedValue * (activeEffect.effect.multiplier or 1)
+        else
+            adjustedValue = adjustedValue + (activeEffect.effect.fallback_bonus or 0)
+        end
+    end
+
+    return math.floor(adjustedValue)
+end
 
 -- Compte les voisins par type autour d'une case de grille.
 local function getAdjacencyCounts(x, y)
@@ -27,20 +56,30 @@ local function getAdjacencyCounts(x, y)
         parks = 0,
         factories = 0,
         banks = 0,
-        towers = 0
+        casinos = 0,
+        towers = 0,
+        bourgeois_kings = 0,
+        mec_donatiens = 0
     }
 
     for _, neighborId in ipairs(grid.getNeighbors(x, y)) do
-        if neighborId == 1 then
+        local neighborKey = getBuildingKey(neighborId)
+        if neighborKey == "house" then
             counts.houses = counts.houses + 1
-        elseif neighborId == 2 then
+        elseif neighborKey == "park" then
             counts.parks = counts.parks + 1
-        elseif neighborId == 3 then
+        elseif neighborKey == "factory" then
             counts.factories = counts.factories + 1
-        elseif neighborId == 4 then
+        elseif neighborKey == "bank" then
             counts.banks = counts.banks + 1
-        elseif neighborId == 5 then
+        elseif neighborKey == "casino" then
+            counts.casinos = counts.casinos + 1
+        elseif neighborKey == "tower" then
             counts.towers = counts.towers + 1
+        elseif neighborKey == "bourgeois_king" then
+            counts.bourgeois_kings = counts.bourgeois_kings + 1
+        elseif neighborKey == "mec_donatien" then
+            counts.mec_donatiens = counts.mec_donatiens + 1
         end
     end
 
@@ -86,11 +125,11 @@ local function countAdjacentTowerPairs()
 
     for y = 1, size do
         for x = 1, size do
-            if grid.getCell(x, y) == 5 then
-                if x < size and grid.getCell(x + 1, y) == 5 then
+            if getBuildingKey(grid.getCell(x, y)) == "tower" then
+                if x < size and getBuildingKey(grid.getCell(x + 1, y)) == "tower" then
                     total = total + 1
                 end
-                if y < size and grid.getCell(x, y + 1) == 5 then
+                if y < size and getBuildingKey(grid.getCell(x, y + 1)) == "tower" then
                     total = total + 1
                 end
             end
@@ -109,6 +148,7 @@ local function applyLawBonuses(resolution, laws)
         for _, effect in ipairs(law.effects or {}) do
             if effect.type == "aligned_houses" then
                 local segmentCount = 0
+                local adjustedBonus = getAdjustedLawValue(effect, effect.bonus)
 
                 for y = 1, size do
                     local runs = collectLineRuns(function(x)
@@ -132,23 +172,45 @@ local function applyLawBonuses(resolution, laws)
                     table.insert(resolution, {
                         step_type = "law",
                         law_name = law.name,
-                        points = effect.bonus
+                        points = adjustedBonus
                     })
                 end
 
-                total = total + (segmentCount * effect.bonus)
+                total = total + (segmentCount * adjustedBonus)
             elseif effect.type == "adjacent_towers_bonus" then
                 local pairCount = countAdjacentTowerPairs()
+                local adjustedBonus = getAdjustedLawValue(effect, effect.bonus)
 
                 for _ = 1, pairCount do
                     table.insert(resolution, {
                         step_type = "law",
                         law_name = law.name,
-                        points = effect.bonus
+                        points = adjustedBonus
                     })
                 end
 
-                total = total + (pairCount * effect.bonus)
+                total = total + (pairCount * adjustedBonus)
+            elseif effect.type == "building_count_bonus" then
+                local matchingCount = 0
+                local adjustedBonus = getAdjustedLawValue(effect, effect.bonus)
+
+                for y = 1, size do
+                    for x = 1, size do
+                        if getBuildingKey(grid.getCell(x, y)) == effect.building_key then
+                            matchingCount = matchingCount + 1
+                        end
+                    end
+                end
+
+                for _ = 1, matchingCount do
+                    table.insert(resolution, {
+                        step_type = "law",
+                        law_name = law.name,
+                        points = adjustedBonus
+                    })
+                end
+
+                total = total + (matchingCount * adjustedBonus)
             end
         end
     end
@@ -160,6 +222,7 @@ end
 local function applyMayorBoardBonuses(player, resolution)
     local total = 0
     local size = grid.getSize()
+    local mayorEffectMultiplier = getMayorEffectMultiplier()
 
     for _, effect in ipairs(player and player.mayor and player.mayor.effects or {}) do
         if effect.type == "empty_or_park_group_bonus" then
@@ -168,7 +231,7 @@ local function applyMayorBoardBonuses(player, resolution)
             for y = 1, size do
                 for x = 1, size do
                     local cell = grid.getCell(x, y)
-                    if cell == 0 or cell == 2 then
+                    if cell == 0 or getBuildingKey(cell) == "park" then
                         count = count + 1
                     end
                 end
@@ -179,11 +242,11 @@ local function applyMayorBoardBonuses(player, resolution)
                 table.insert(resolution, {
                     step_type = "law",
                     law_name = player.mayor.name,
-                    points = effect.value
+                    points = math.floor((effect.value or 0) * mayorEffectMultiplier)
                 })
             end
 
-            total = total + (groups * effect.value)
+            total = total + (groups * math.floor((effect.value or 0) * mayorEffectMultiplier))
         end
     end
 
@@ -193,10 +256,11 @@ end
 -- Cumule les modificateurs de maire lies a une source ou une cible precise.
 local function getMayorModifier(mayorEffects, modifierType, source, target)
     local total = 0
+    local mayorEffectMultiplier = getMayorEffectMultiplier()
     for _, effect in ipairs(mayorEffects or {}) do
         if effect.type == modifierType and effect.source == source then
             if target == nil or effect.target == target then
-                total = total + effect.value
+                total = total + math.floor((effect.value or 0) * mayorEffectMultiplier)
             end
         end
     end
@@ -237,7 +301,7 @@ local function applyLeafEnjoyerRule(mayorEffects, source, adjacencyCounts, value
                 return 0
             end
 
-            return value * effect.multiplier
+            return value * ((effect.multiplier or 1) * getMayorEffectMultiplier())
         end
     end
 
@@ -267,18 +331,18 @@ function score.getBuildingValue(buildingId, x, y, adjacencyCounts, mayorEffects,
     end
 
     local value = building.base_score
-    local source = BUILDING_NAMES[buildingId]
+    local source = building.key
 
     value = value + getMayorModifier(mayorEffects, "flat_bonus_modifier", source)
 
-    for _, effect in ipairs(building.effects or {}) do
+    building_effects.forEachBuildingEffect(building, "scoring", function(effect)
         if effect.type == "adjacent_bonus" then
             local countKey = ADJACENCY_KEYS[effect.target]
             local baseValue = adjacencyCounts[countKey] or 0
             local mayorModifier = getMayorModifier(mayorEffects, "adjacent_bonus_modifier", source, effect.target)
             value = value + (baseValue * (effect.value + mayorModifier))
         end
-    end
+    end)
 
     value = applyLeafEnjoyerRule(mayorEffects, source, adjacencyCounts, value)
     value = applyBossOverrides(currentBoss, source, value)

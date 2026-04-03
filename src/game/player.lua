@@ -17,14 +17,24 @@ local function clearTable(target)
     end
 end
 
--- Additionne les bonus de poses en attente donnes par les lois possedees.
-local function getLawPendingPlacementBonus()
+-- Additionne les bonus de poses en attente donnes par les lois, avec modificateurs de plateau si presents.
+local function getLawPendingPlacementBonus(grid)
     local total = 0
+    local lawMultiplier = 1
+    local fallbackBonus = 0
+
+    if grid then
+        local building_effects = require("src.game.systems.building_effects")
+        for _, activeEffect in ipairs(building_effects.collectTriggeredEffects(grid, "board_modifier", "law_effect_multiplier")) do
+            lawMultiplier = lawMultiplier * (activeEffect.effect.multiplier or 1)
+            fallbackBonus = fallbackBonus + (activeEffect.effect.fallback_bonus or 0)
+        end
+    end
 
     for _, ownedLaw in ipairs(player.laws) do
         for _, effect in ipairs(ownedLaw.effects or {}) do
             if effect.type == "extra_pending_placements" then
-                total = total + (effect.value or 0)
+                total = total + math.floor(((effect.value or 0) * lawMultiplier) + fallbackBonus)
             end
         end
     end
@@ -32,9 +42,42 @@ local function getLawPendingPlacementBonus()
     return total
 end
 
+-- Compte combien d'exemplaires d'un type de batiment existent dans tous les paquets de la run.
+function player.countBuildingCopiesByKey(buildingKey)
+    local count = 0
+
+    local function countInPile(cards)
+        for _, card in ipairs(cards or {}) do
+            if card.key == buildingKey then
+                count = count + 1
+            end
+        end
+    end
+
+    countInPile(player.deck)
+    countInPile(player.hand)
+    countInPile(player.discard)
+
+    return count
+end
+
+-- Compte combien d'exemplaires achetes d'un type de batiment appartiennent au deck permanent.
+function player.countOwnedBuildingCopiesByKey(buildingKey)
+    local count = 0
+
+    for _, buildingId in ipairs(player.owned_buildings) do
+        local buildingData = buildings.getData(buildingId)
+        if buildingData and buildingData.key == buildingKey then
+            count = count + 1
+        end
+    end
+
+    return count
+end
+
 -- Retourne le nombre maximal de cartes posables avant un BUILD.
-function player.getMaxPendingPlacements()
-    return DEFAULT_MAX_PENDING_PLACEMENTS + getLawPendingPlacementBonus()
+function player.getMaxPendingPlacements(grid)
+    return DEFAULT_MAX_PENDING_PLACEMENTS + getLawPendingPlacementBonus(grid)
 end
 
 player.score = 0

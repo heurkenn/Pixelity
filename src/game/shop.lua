@@ -10,7 +10,8 @@ local shop = {}
 local BUILDING_RARITY_WEIGHTS = {
     common = 6,
     uncommon = 3,
-    rare = 1
+    rare = 1,
+    legendary = 0.35
 }
 local LAW_RARITY_WEIGHTS = {
     common = 6,
@@ -155,13 +156,26 @@ local function isHidden(game, section, id)
     return game.shop_hidden_entries and game.shop_hidden_entries[section .. ":" .. tostring(id)] == true
 end
 
+-- Verifie si la condition d'apparition d'une loi est satisfaite par la run courante.
+local function meetsLawRequirement(player, lawData)
+    if not lawData or lawData.require == nil or lawData.require == "NA" then
+        return true
+    end
+
+    if lawData.require.type == "at_least_building_in_deck" then
+        return player.countBuildingCopiesByKey(lawData.require.building_key) >= (lawData.require.count or 0)
+    end
+
+    return true
+end
+
 -- Liste les lois encore autorisees pour le joueur et ce shop.
 local function collectAvailableLawIds(game, player)
     local ids = {}
     for _, lawData in ipairs(law.types) do
         local copyCount = player and player.countLawCopies(lawData.id) or 0
         local canAppear = copyCount == 0 or (player.allow_duplicate_laws and copyCount < 2)
-        if canAppear and not isHidden(game, "law", lawData.id) then
+        if canAppear and meetsLawRequirement(player, lawData) and not isHidden(game, "law", lawData.id) then
             table.insert(ids, lawData.id)
         end
     end
@@ -169,10 +183,15 @@ local function collectAvailableLawIds(game, player)
 end
 
 -- Liste les batiments encore disponibles dans l'offre courante.
-local function collectAvailableBuildingIds(game)
+local function collectAvailableBuildingIds(game, player)
     local ids = {}
     for _, building in ipairs(buildings.types) do
-        if not isHidden(game, "building", building.id) then
+        local alreadyOwnedUnique = building.unique
+            and player
+            and player.countOwnedBuildingCopiesByKey
+            and player.countOwnedBuildingCopiesByKey(building.key) > 0
+
+        if not isHidden(game, "building", building.id) and not alreadyOwnedUnique then
             table.insert(ids, building.id)
         end
     end
@@ -211,7 +230,7 @@ end
 function shop.rollOffers(game, player)
     game.shop_offers = {
         laws = takeWeightedLawIds(collectAvailableLawIds(game, player), 3),
-        buildings = takeWeightedBuildingIds(collectAvailableBuildingIds(game), 2),
+        buildings = takeWeightedBuildingIds(collectAvailableBuildingIds(game, player), 2),
         items = takeRandomIds(collectAvailableItemIds(game, player), 2)
     }
 end
@@ -233,7 +252,7 @@ function shop.prepareOffers(game, player)
 
     local filteredBuildings = {}
     for _, buildingId in ipairs(game.shop_offers.buildings or {}) do
-        if not isHidden(game, "building", buildingId) then
+        if hasValue(collectAvailableBuildingIds(game, player), buildingId) then
             table.insert(filteredBuildings, buildingId)
         end
     end
@@ -256,7 +275,7 @@ function shop.prepareOffers(game, player)
         end
     end
     if #game.shop_offers.buildings < 2 then
-        local extraBuildingIds = takeWeightedBuildingIds(collectAvailableBuildingIds(game), 2 - #game.shop_offers.buildings, game.shop_offers.buildings)
+        local extraBuildingIds = takeWeightedBuildingIds(collectAvailableBuildingIds(game, player), 2 - #game.shop_offers.buildings, game.shop_offers.buildings)
         for _, buildingId in ipairs(extraBuildingIds) do
             table.insert(game.shop_offers.buildings, buildingId)
         end
@@ -376,6 +395,9 @@ function shop.buyBuilding(player, buildingId)
     local building = buildings.getData(buildingId)
     if not building then
         return false, "Batiment introuvable."
+    end
+    if building.unique and player.countOwnedBuildingCopiesByKey and player.countOwnedBuildingCopiesByKey(building.key) > 0 then
+        return false, "Batiment unique deja present dans le deck."
     end
     if not player.spendMoney(building.price) then
         return false, "Pas assez de pieces."

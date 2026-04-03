@@ -5,6 +5,7 @@ local shared = require("src.app.input_shared")
 
 local input_play = {}
 
+-- Gere tous les clics pendant une run: overlays, HUD, grille, objets et selection de cartes.
 function input_play.handleClick(ctx, x, y)
     local game = ctx.game
     local layout = ctx.layout
@@ -159,6 +160,7 @@ function input_play.handleClick(ctx, x, y)
     return true
 end
 
+-- Termine un drag de carte et tente la pose sur la grille si le curseur est sur une case valide.
 function input_play.handleRelease(ctx, x, y, button)
     local game = ctx.game
     local grid = ctx.grid
@@ -184,6 +186,7 @@ function input_play.handleRelease(ctx, x, y, button)
     game.dragging.card = nil
 end
 
+-- Gere les raccourcis clavier de la partie active, surtout la validation rapide du BUILD.
 function input_play.handleKey(ctx, key)
     if key == "return" and ctx.game.state == "playing" then
         local placedCount = #ctx.game.pending_placements

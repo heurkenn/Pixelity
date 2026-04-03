@@ -9,6 +9,7 @@ law.types = {
         name = "Rue grandissante",
         price = 3,
         rarity = "common",
+        require = "NA",
         description = "Les voisins commencent a se saluer : +10 par segment de 3 maisons.",
         effects = {
             { type = "aligned_houses", segment_size = 3, bonus = 10 }
@@ -19,6 +20,7 @@ law.types = {
         name = "Avenue de la reussite",
         price = 4,
         rarity = "uncommon",
+        require = "NA",
         description = "Quand une rue marche, tout le monde veut son commerce : +15 par segment de 4 maisons.",
         effects = {
             { type = "aligned_houses", segment_size = 4, bonus = 15 }
@@ -29,6 +31,7 @@ law.types = {
         name = "Boulevard de la richesse",
         price = 5,
         rarity = "rare",
+        require = "NA",
         description = "Les impots montent aussi vite que la skyline : +75 par segment de 5 maisons.",
         effects = {
             { type = "aligned_houses", segment_size = 5, bonus = 70 }
@@ -39,6 +42,7 @@ law.types = {
         name = "Extension de chantier",
         price = 5,
         rarity = "uncommon",
+        require = "NA",
         description = "Le voisinage adore les marteaux-piqueurs : +2 poses avant BUILD.",
         effects = {
             { type = "extra_pending_placements", value = 2 }
@@ -49,9 +53,25 @@ law.types = {
         name = "En bas du bloc",
         price = 4,
         rarity = "common",
+        require = "NA",
         description = "Le maire fait profiter les p'tit commerce... : +1 par paire adjacente a chaque BUILD.",
         effects = {
             { type = "adjacent_towers_bonus", bonus = 1 }
+        }
+    },
+    {
+        id = "vegas",
+        name = "Vegas",
+        price = 5,
+        rarity = "common",
+        require = {
+            type = "at_least_building_in_deck",
+            building_key = "casino",
+            count = 2
+        },
+        description = "Venez passer une folle soiree et tout mettre sur le rouge : +50 par Casino.",
+        effects = {
+            { type = "building_count_bonus", building_key = "casino", bonus = 50 }
         }
     }
 }

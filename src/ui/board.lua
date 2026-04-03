@@ -44,7 +44,7 @@ function board.drawBuildingTile(buildings, grid, buildingId, posX, posY, alpha, 
     end
 
     local level = (grid.getCellLevel and cellX and cellY) and grid.getCellLevel(cellX, cellY) or 1
-    if buildingId == 5 and level and level > 1 then
+    if data.key == "tower" and level and level > 1 then
         love.graphics.setColor(1, 1, 1, alpha)
         love.graphics.print("x" .. level, posX + constants.TILE_SIZE - 22, posY + 4)
     end

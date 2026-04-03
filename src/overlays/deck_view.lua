@@ -17,6 +17,25 @@ local function collectSections(player)
     return sections
 end
 
+-- Resume une pile de cartes en quantites par type pour les affichages compacts.
+local function summarizeCards(cardsList)
+    local countsById = {}
+    local orderedRows = {}
+
+    for _, card in ipairs(cardsList or {}) do
+        if not countsById[card.id] then
+            countsById[card.id] = {
+                label = card.name,
+                value = 0
+            }
+            table.insert(orderedRows, countsById[card.id])
+        end
+        countsById[card.id].value = countsById[card.id].value + 1
+    end
+
+    return orderedRows
+end
+
 -- Dessine la vue detaillee de la main, du deck et de la defausse.
 function deck_view.draw(game, player)
     if not game.deck_view_open then
@@ -62,19 +81,29 @@ function deck_view.draw(game, player)
         love.graphics.printf(section.subtitle, sectionRect.x + 18, sectionRect.y + 48, 150, "left")
         love.graphics.printf(tostring(#section.cards) .. " carte(s)", sectionRect.x + 18, sectionRect.y + 76, 150, "left")
 
-        local rects = layout.distributeRowInRect(cardsArea, cardCount, cardWidth, cardHeight, 10)
-        if #section.cards == 0 then
-            love.graphics.setColor(0.55, 0.58, 0.62)
-            love.graphics.printf("Aucune carte", cardsArea.x, cardsArea.y + 28, cardsArea.w, "center")
+        if section.state == "deck" or section.state == "discard" then
+            local summaryRows = summarizeCards(section.cards)
+            if #summaryRows == 0 then
+                love.graphics.setColor(0.55, 0.58, 0.62)
+                love.graphics.printf("Aucune carte", cardsArea.x, cardsArea.y + 28, cardsArea.w, "center")
+            else
+                widgets.drawKeyValueList(summaryRows, cardsArea.x + 8, cardsArea.y + 8, cardsArea.w - 16, 18)
+            end
         else
-            for cardIndex, card in ipairs(section.cards) do
-                cards.drawMiniCard(
-                    rects[cardIndex],
-                    card.name,
-                    nil,
-                    section.alpha,
-                    section.highlight
-                )
+            local rects = layout.distributeRowInRect(cardsArea, cardCount, cardWidth, cardHeight, 10)
+            if #section.cards == 0 then
+                love.graphics.setColor(0.55, 0.58, 0.62)
+                love.graphics.printf("Aucune carte", cardsArea.x, cardsArea.y + 28, cardsArea.w, "center")
+            else
+                for cardIndex, card in ipairs(section.cards) do
+                    cards.drawMiniCard(
+                        rects[cardIndex],
+                        card.name,
+                        nil,
+                        section.alpha,
+                        section.highlight
+                    )
+                end
             end
         end
     end

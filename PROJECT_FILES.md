@@ -9,6 +9,7 @@ Ce document donne un resume rapide du role de chaque fichier principal du projet
 - [`README.md`](/home/kali/Pixelity/README.md) : presentation generale du projet.
 - [`TODO.md`](/home/kali/Pixelity/TODO.md) : roadmap de developpement.
 - [`PROJECT_FILES.md`](/home/kali/Pixelity/PROJECT_FILES.md) : resume des fichiers du codebase.
+- [`ARCHITECTURE_GUIDE.md`](/home/kali/Pixelity/ARCHITECTURE_GUIDE.md) : guide de lecture de l'architecture, du runtime LÖVE et des fichiers centraux.
 
 ## src
 

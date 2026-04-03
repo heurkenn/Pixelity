@@ -10,6 +10,12 @@ local buildings = require("src.data.buildings")
 
 local gameplay = {}
 
+-- Retourne la cle logique d'un batiment a partir de son identifiant.
+local function getBuildingKey(buildingId)
+    local buildingData = buildings.getData(buildingId)
+    return buildingData and buildingData.key or nil
+end
+
 -- Retourne les donnees de difficulte selectionnees dans la run courante.
 function gameplay.getDifficulty(game)
     return round_flow.getDifficulty(game.selected_difficulty_id)
@@ -172,7 +178,7 @@ end
 
 -- Tente de poser une carte de main sur une case cible.
 function gameplay.placeCardFromHand(game, player, grid, handIndex, x, y)
-    local maxPendingPlacements = player.getMaxPendingPlacements and player.getMaxPendingPlacements() or 4
+    local maxPendingPlacements = player.getMaxPendingPlacements and player.getMaxPendingPlacements(grid) or 4
     if #game.pending_placements >= maxPendingPlacements then
         game.message = "Maximum " .. maxPendingPlacements .. " cartes avant BUILD."
         return false
@@ -186,7 +192,7 @@ function gameplay.placeCardFromHand(game, player, grid, handIndex, x, y)
     -- Immeuble is the only card that can legally target an occupied cell:
     -- stacking it upgrades the existing Immeuble instead of replacing the tile.
     local projectedId = getProjectedCellId(game, grid, x, y)
-    local isTowerUpgrade = card.id == 5 and projectedId == 5
+    local isTowerUpgrade = card.key == "tower" and getBuildingKey(projectedId) == "tower"
 
     if not isTowerUpgrade and not gameplay.canPlaceAt(game, grid, x, y) then
         player.returnCardToHand(card)
@@ -194,8 +200,8 @@ function gameplay.placeCardFromHand(game, player, grid, handIndex, x, y)
         return false
     end
 
-    if card.id == 2 and player.max_park_on_grid then
-        local parkCount = gameplay.countPlacedOrCommitted(game, grid, 2)
+    if card.key == "park" and player.max_park_on_grid then
+        local parkCount = gameplay.countPlacedOrCommitted(game, grid, card.id)
         if parkCount >= player.max_park_on_grid then
             player.returnCardToHand(card)
             game.message = "Maximum " .. player.max_park_on_grid .. " Park sur la grille."

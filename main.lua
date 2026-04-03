@@ -18,6 +18,7 @@ local render = require("src.app.render")
 local profile = require("src.app.profile")
 local save = require("src.app.save")
 local video = require("src.app.video")
+local intro = require("src.menus.intro")
 
 -- main.lua now stays intentionally thin:
 -- it creates the root state, loads shared assets and delegates input/update/draw.
@@ -38,7 +39,7 @@ function love.load()
     buildings.loadImages()
     ui.loadAssets()
     ui.applyDefaultFont()
-    require("src.menus.intro").load(game)
+    intro.load(game)
     profile.load()
     profile.applyPreferences(game)
     video.applyMode(game, game.video_mode)
@@ -50,7 +51,7 @@ function love.load()
         end
     end
 
-    require("src.menus.intro").reset(game)
+    intro.reset(game)
     save.refreshFlag(game)
     app_context = {
         game = game,

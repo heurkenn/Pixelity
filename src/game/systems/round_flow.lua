@@ -6,6 +6,7 @@ local buildings = require("src.data.buildings")
 local rounds = require("src.data.rounds")
 local bosses = require("src.game.systems.bosses")
 local mayor_effects = require("src.game.systems.mayor_effects")
+local building_effects = require("src.game.systems.building_effects")
 local shop = require("src.game.shop")
 
 local round_flow = {}
@@ -108,21 +109,7 @@ function round_flow.endRoundSuccess(game, player)
     local gainedMoney = 3 + player.available_builds
     local bankReward = 0
     local countdownDelay = math.max(0.2, 3 / math.max(1, game.scoring_speed or 1))
-    local cells = game.grid_ref and game.grid_ref.getCells() or {}
-
-    for _, row in ipairs(cells) do
-        for _, value in ipairs(row) do
-            local buildingData = buildings.getData(value)
-            if buildingData then
-                for _, effect in ipairs(buildingData.effects or {}) do
-                    if effect.type == "money_reward" then
-                        local multiplier = effect.source == "bank" and player.bank_money_multiplier or 1
-                        bankReward = bankReward + (effect.value * multiplier)
-                    end
-                end
-            end
-        end
-    end
+    bankReward = building_effects.collectRoundRewards(player, game.grid_ref)
 
     gainedMoney = gainedMoney + bankReward
     player.addMoney(gainedMoney)
@@ -218,6 +205,7 @@ function round_flow.finalizeBuild(game, player, grid, scoreModule)
         table.insert(committedCards, placement.card)
     end
     player.commitPlacedCards(committedCards)
+    building_effects.applyOnBuildEffects(game, player, grid)
 
     game.pending_placements = {}
     game.selected_hand_index = nil
